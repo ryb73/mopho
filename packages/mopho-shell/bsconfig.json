@@ -1,0 +1,15 @@
+{
+    "name" : "mopho-shell",
+    "bs-dependencies": [
+        "reason-react"
+    ],
+    "sources" : [
+        { "dir" : "src" },
+        {
+            "dir": "test",
+            "type": "dev"
+        }
+    ],
+    "reason" : { "react-jsx" : 2 },
+    "bsc-flags": [ "-w -10", "-bs-super-errors" ]
+}

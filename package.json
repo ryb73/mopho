@@ -1,27 +1,10 @@
 {
   "name": "mopho",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run clean && eval $(dependencyEnv) && nopam && bsb 2>&1 | berror.native --path-to-refmttype $(which refmttype)",
-    "build-no-be": "bsb 2>&1",
-    "watch": "npm run clean && eval $(dependencyEnv) && nopam && bsb -make-world -w 2>&1 | berror.native --path-to-refmttype $(which refmttype)",
-    "clean": "bsb -clean-world"
-  },
-  "keywords": [],
-  "license": "GPLv2",
-  "author": "Ryan Biwer",
-  "_": [],
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:ryb73/mopho.git"
-  },
+  "repository": "git@github.com:ryb73/mopho.git",
+  "author": "Ryan Biwer <ryan@brightcellars.com>",
+  "license": "GPL-2.0",
   "devDependencies": {
-    "bs-platform": "1.9.0",
-    "dependency-env": "0.1.1",
-    "nopam": "0.1.0",
-    "ocamlBetterErrors": "0.1.1"
+    "lerna": "^2.2.0"
   }
 }
