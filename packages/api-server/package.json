@@ -14,8 +14,11 @@
   "author": "Ryan Biwer",
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
-  "dependencies": {},
+  "dependencies": {
+    "express-session": "^1.15.5"
+  },
   "devDependencies": {
-    "bs-express": "reasonml-community/bs-express"
+    "bs-express": "reasonml-community/bs-express",
+    "bs-platform": "^1.9.2"
   }
 }
