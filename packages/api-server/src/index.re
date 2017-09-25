@@ -1,7 +1,10 @@
 open Express;
+open Node;
+open Js.Promise;
 
 let secret = "secret";
 let secure = false;
+let uri = "http://www.bc.local:54380";
 
 let app = App.make ();
 
@@ -15,22 +18,52 @@ App.use app (ExpressSession.make @@ ExpressSession.opts
     cookie::(ExpressSession.cookieOpts ::secure ()) ()
 );
 
-App.get app path::"/generate-state" @@ Middleware.from (fun req resp _ => {
-    let success = Session.set req "napster" {
-        "authState": "allstate"
+let generateState ()  => {
+    Js.Promise.make @@ fun ::resolve ::reject => {
+        Crypto.randomBytes 16 (fun result => {
+            switch result {
+                | `Exception e => reject (Js.Exn.internalToOCamlException @@ Obj.magic e) [@bs]
+                | `Buffer buffer => resolve (Buffer.toStringWithEncoding buffer encoding::"base64") [@bs]
+            };
+        });
     };
+};
 
-    if(success) {
-        Response.sendString resp "success";
-    } else {
-        Response.sendString resp "noo";
-    }
+generateState ();
+
+App.get app path::"/generate-state" @@ Middleware.fromAsync (fun req resp _ => {
+    generateState ()
+        |> then_ @@ fun state => {
+            Js.log @@ "got state: " ^ state;
+            let success = Session.set req "napster" {
+                "authState": state
+            };
+
+            if(success) {
+                resolve @@ Response.sendString resp "success";
+            } else {
+                resolve @@ Response.sendString resp "noo";
+            };
+        }
+
+        |> catch @@ fun error => {
+            Js.log error;
+            Response.status resp 500
+                |> Response.end_
+                |> resolve;
+        };
 });
 
 App.get app path::"/read-state" @@ Middleware.from (fun req resp _ => {
+    /* Express.Response.set resp "Access-Control-Allow-Origin" uri;
+    Express.Response.status resp 500
+        |> Response.end_; */
+
+    Express.Response.set resp "Access-Control-Allow-Origin" uri;
+
     let optSessionData = Session.get req "napster";
     switch optSessionData {
-        | None => Response.sendString resp "none"
+        | None => Response.sendJson resp ({ "none": true })
         | Some sessionData => Response.sendString resp sessionData##authState
     };
 });

@@ -2,7 +2,9 @@
     "name" : "api-server",
     "bs-dependencies": [
         "bs-express",
-        "bs-express-session"
+        "bs-express-session",
+        "bs-node",
+        "bs-json"
     ],
     "sources" : [
         { "dir" : "src" },
