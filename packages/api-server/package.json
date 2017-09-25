@@ -15,16 +15,17 @@
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
   "dependencies": {
+    "express": "^4.15.4",
     "express-session": "^1.15.5"
   },
   "devDependencies": {
-    "bs-json": "^0.2.3",
     "bs-platform": "^1.9.2"
   },
   "//": {
     "linked dependencies": [
       "bs-express",
-      "bs-node"
+      "bs-node",
+      "bs-express-session"
     ]
   }
 }

@@ -1,7 +1,9 @@
 {
-    "name" : "mopho-shell",
+    "name" : "mopho-frame",
     "bs-dependencies": [
-        "reason-react"
+        "reason-react",
+        "bs-superagent",
+        "bs-falsy"
     ],
     "sources" : [
         { "dir" : "src" },

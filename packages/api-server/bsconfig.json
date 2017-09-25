@@ -3,8 +3,7 @@
     "bs-dependencies": [
         "bs-express",
         "bs-express-session",
-        "bs-node",
-        "bs-json"
+        "bs-node"
     ],
     "sources" : [
         { "dir" : "src" },
