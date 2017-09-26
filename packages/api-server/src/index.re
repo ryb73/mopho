@@ -46,7 +46,7 @@ App.get app path::"/generate-state" @@ Middleware.fromAsync (fun req resp _ => {
                 Response.status resp 500
                     |> Response.end_
                     |> resolve;
-            }
+            };
         }
 
         |> catch @@ fun error => {

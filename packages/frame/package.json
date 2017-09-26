@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "bsb -make-world",
+    "build": "npm run clean && bsb -make-world",
     "watch": "npm run clean && bsb -make-world -w",
-    "clean": "bsb -clean-world",
+    "clean": "rm -rf lib && bsb -clean-world",
     "webpack": "webpack -w"
   },
   "keywords": [],
@@ -15,8 +15,10 @@
   "author": "Ryan Biwer",
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
+  "peerDependencies": {
+    "bs-platform": "^1.9.2"
+  },
   "devDependencies": {
-    "bs-platform": "^1.9.2",
     "copy-webpack-plugin": "^4.0.1",
     "font-awesome": "^4.7.0",
     "react": "^15.6.1",
