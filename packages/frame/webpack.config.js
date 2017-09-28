@@ -2,28 +2,52 @@ const path              = require("path"),
       CopyWebpackPlugin = require("copy-webpack-plugin"),
       webpack           = require("webpack");
 
+function rel(relPath) {
+    return path.resolve(__dirname, relPath)
+}
+
 module.exports = {
+    name: "frame",
+
     entry: {
-        index: "./lib/js/src/index.js",
+        index: rel("src/index.re"),
     },
 
     output: {
-        path: path.resolve("./html"),
-        filename: "js/[name].js",
+        path: rel("html/js"),
+        filename: "[name].js",
+    },
+
+    module: {
+        rules: [
+            {
+                test: /\.(re|ml)$/,
+                use: {
+                    loader: "bs-loader",
+                    options: {
+                        cwd: __dirname
+                    }
+                }
+            },
+        ]
+    },
+
+    resolve: {
+        extensions: ['.re', '.ml', '.js'],
     },
 
     plugins: [
         new webpack.DefinePlugin({ "global.GENTLY": false }),
 
         new CopyWebpackPlugin([{
-            from: "node_modules/font-awesome/css",
-            to: "css"
+            from: rel("node_modules/font-awesome/css"),
+            to: rel("html/css")
         }, {
-            from: "node_modules/font-awesome/fonts",
-            to: "fonts"
+            from: rel("node_modules/font-awesome/fonts"),
+            to: rel("html/fonts")
         }, {
-            from: "src/**/*.js",
-            to: path.resolve("./lib/js/[path][name].js")
+            from: rel("src/**/*.js"),
+            to: rel("lib/js/[path][name].js")
         }])
     ],
 
