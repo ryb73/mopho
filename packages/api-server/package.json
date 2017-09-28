@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run clean && bsb -make-world",
     "watch": "npm run clean && bsb -make-world -w",
-    "clean": "bsb -clean-world"
+    "clean": "rm -rf lib/ && bsb -clean-world",
+    "webpack": "webpack -w"
   },
   "keywords": [],
   "license": "GPL-2.0",
@@ -19,7 +20,8 @@
     "express-session": "^1.15.5"
   },
   "devDependencies": {
-    "bs-platform": "^1.9.2"
+    "bs-platform": "^1.9.2",
+    "webpack": "^3.6.0"
   },
   "//": {
     "linked dependencies": [
