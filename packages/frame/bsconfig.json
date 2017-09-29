@@ -3,7 +3,8 @@
     "bs-dependencies": [
         "reason-react",
         "bs-superagent",
-        "bs-falsy"
+        "bs-falsy",
+        "bs-napster"
     ],
     "sources" : [
         { "dir" : "src" },

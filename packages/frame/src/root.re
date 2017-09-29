@@ -10,7 +10,8 @@ type action =
   | Error;
 
 let apiUrl = "//api.mopho.local";
-let apiKey = "API_KEY";
+let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
+let hostname = "mopho.local";
 
 let doRequest endpoint => {
     Superagent.get @@ apiUrl ^ endpoint
@@ -42,9 +43,21 @@ let component = ReasonReact.reducerComponent "Page";
 let make _ => {
     let s2e = ReasonReact.stringToElement;
 
+    Napster.init apiKey "v2.2";
+    Napster.on Ready (fun _ => {
+        Napster.load ();
+        Napster.get Js.false_ "/me" (fun data => {
+            Js.log data;
+        });
+    });
+
+    Napster.on Error (fun error => {
+        Js.log @@ "Error: " ^ {j|$error|j};
+    });
+
     let getAuthUrl apiState => {
         "https://api.napster.com/oauth/authorize?client_id=" ^ apiKey ^
-            "&redirect_uri=http://" ^ "yourdomain.com" ^ "/&response_type=code" ^
+            "&redirect_uri=http://" ^ hostname ^ "/&response_type=code" ^
             "&state=" ^ apiState;
     };
 
