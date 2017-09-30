@@ -4,7 +4,9 @@
         "reason-react",
         "bs-superagent",
         "bs-falsy",
-        "bs-napster"
+        "bs-napster",
+        "bs-webapi",
+        "bs-qs"
     ],
     "sources" : [
         { "dir" : "src" },

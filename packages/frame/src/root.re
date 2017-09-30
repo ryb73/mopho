@@ -1,130 +1,56 @@
-open Js.Promise;
-
 type state = {
-    authState: option string,
     error: bool
 };
 
 type action =
-  | SetAuthState string
   | Error;
-
-let apiUrl = "//api.mopho.local";
-let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
-let hostname = "mopho.local";
-
-let doRequest endpoint => {
-    Superagent.get @@ apiUrl ^ endpoint
-    |> Superagent.Get.end_
-    |> then_ (fun (err, res) => {
-        resolve @@ switch res {
-            | None => switch err {
-                | None => `Error ("Unknown error in API request " ^ endpoint)
-                | Some str => `Error str
-            }
-
-            | Some res => {
-                switch (Falsy.to_opt res##error) {
-                    | Some error => `Error error##message
-                    | None => {
-                        switch (Js.Null.to_opt res##body) {
-                            | None => `Error ("No response body for API request " ^ endpoint)
-                            | Some body => `Success body
-                        };
-                    }
-                };
-            }
-        };
-    });
-};
 
 let component = ReasonReact.reducerComponent "Page";
 
 let make _ => {
     let s2e = ReasonReact.stringToElement;
 
-    Napster.init apiKey "v2.2";
+    /* Napster.init apiKey "v2.2";
     Napster.on Ready (fun _ => {
         Napster.load ();
         Napster.get Js.false_ "/me" (fun data => {
             Js.log data;
         });
-    });
+    }); */
 
     Napster.on Error (fun error => {
         Js.log @@ "Error: " ^ {j|$error|j};
     });
 
-    let getAuthUrl apiState => {
-        "https://api.napster.com/oauth/authorize?client_id=" ^ apiKey ^
-            "&redirect_uri=http://" ^ hostname ^ "/&response_type=code" ^
-            "&state=" ^ apiState;
-    };
-
-    let renderError () => {
+    let renderError =
         <div>
             (s2e "An error occurred")
         </div>;
-    };
 
-    let renderAuth state => {
-        switch state.authState {
-            | None => <div>(s2e "Loading")</div>;
-            | Some authState => {
-                <div>
-                    (s2e @@ getAuthUrl authState)
-                </div>;
-            }
-        };
+    let renderIFrame = {
+        let styles = ReactDOMRe.Style.make width::"100%" height::"100%" border::"0" ();
+        <iframe src="napster-auth.html" style=styles />
     };
-
-    let go reduce action => reduce (fun _ => action) ();
 
     {
         ...component,
 
         render: fun { state } => {
             switch state.error {
-                | true => renderError ()
-                | false => renderAuth state
+                | true => renderError
+                | false => renderIFrame
             };
         },
 
         initialState: fun () => {
-            authState: None,
             error: false
         },
 
-        reducer: fun action state => {
+        reducer: fun action _ => {
             switch action {
-                | SetAuthState authState =>
-                    ReasonReact.Update { ...state, authState: Some authState }
                 | Error =>
-                    ReasonReact.Update { ...state, error: true }
+                    ReasonReact.Update { error: true }
             };
-        },
-
-        didMount: fun { reduce } => {
-            doRequest "/generate-state/"
-                |> then_ (fun result => {
-                    switch result {
-                        | `Error message => {
-                            Js.log message;
-                            go reduce @@ Error;
-                        }
-
-                        | `Success body => go reduce @@ SetAuthState body##state
-                    };
-
-                    resolve ();
-                })
-                |> catch (fun exn => {
-                    Js.log exn;
-                    go reduce Error;
-                    resolve ();
-                });
-
-            ReasonReact.NoUpdate;
         }
     }
 };
