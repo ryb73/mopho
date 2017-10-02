@@ -1,11 +1,6 @@
 {
-    "name" : "api-server",
-    "bs-dependencies": [
-        "bs-express",
-        "bs-express-session",
-        "bs-node",
-        "bs-superagent"
-    ],
+    "name" : "rest-helper",
+    "bs-dependencies": [ "bs-falsy" ],
     "sources" : [
         { "dir" : "src" },
         {
