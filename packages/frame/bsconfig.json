@@ -6,7 +6,8 @@
         "bs-falsy",
         "bs-napster",
         "bs-webapi",
-        "bs-qs"
+        "bs-qs",
+        "mopho-rest-helper"
     ],
     "sources" : [
         { "dir" : "src" },

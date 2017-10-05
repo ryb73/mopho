@@ -22,15 +22,17 @@ let getAuthUrl apiState => {
 
 let doGet endpoint => {
     Superagent.get @@ apiUrl ^ endpoint
+    |> Superagent.Get.withCredentials
     |> Superagent.Get.end_
-    |> then_ @@ parseResponse;
+    |> then_ @@ Rest.parseResponse;
 };
 
 let doPost endpoint data => {
     Superagent.post @@ apiUrl ^ endpoint
+    |> Superagent.Post.withCredentials
     |> Superagent.Post.send data
     |> Superagent.Post.end_
-    |> then_ @@ parseResponse;
+    |> then_ @@ Rest.parseResponse;
 };
 
 let doAuth authState => {

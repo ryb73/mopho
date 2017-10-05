@@ -1,5 +1,5 @@
 {
-    "name" : "rest-helper",
+    "name" : "mopho-rest-helper",
     "bs-dependencies": [ "bs-falsy" ],
     "sources" : [
         { "dir" : "src" },

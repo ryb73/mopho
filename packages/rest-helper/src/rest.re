@@ -3,7 +3,7 @@ open Js.Promise;
 let parseResponse (err, res) => {
     resolve @@ switch res {
         | None => switch err {
-            | None => `UnkownError
+            | None => `UnknownError
             | Some str => `NoResponse str
         }
 

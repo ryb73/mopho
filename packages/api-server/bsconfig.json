@@ -4,7 +4,11 @@
         "bs-express",
         "bs-express-session",
         "bs-node",
-        "bs-superagent"
+        "bs-superagent",
+        "mopho-rest-helper",
+        "bs-corser",
+        "bs-batteries",
+        "bs-base64url"
     ],
     "sources" : [
         { "dir" : "src" },

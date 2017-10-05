@@ -6,10 +6,10 @@ function rel(relPath) {
 }
 
 module.exports = {
-    name: "api-server",
+    name: "rest-helper",
 
     entry: {
-        index: rel("src/index.re"),
+        index: rel("src/rest.re"),
     },
 
     output: {
@@ -19,22 +19,21 @@ module.exports = {
 
     module: {
         noParse: /node_modules/,
-        rules: [{
-            test: /\.(re|ml)$/,
-            use: {
-                loader: "bs-loader",
-                options: {
-                    cwd: __dirname
+        rules: [
+            {
+                test: /\.(re|ml)$/,
+                use: {
+                    loader: "bs-loader",
+                    options: {
+                        cwd: __dirname
+                    }
                 }
-            }
-        }]
+            },
+        ]
     },
 
     resolve: {
         extensions: ['.re', '.ml', '.js'],
-        alias: {
-            express: rel("dummy.js"),
-        }
     },
 
     stats: {

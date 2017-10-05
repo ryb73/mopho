@@ -15,12 +15,16 @@
   "author": "Ryan Biwer",
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
+  "peerDependencies": {
+    "bs-platform": "^1.9.2"
+  },
   "dependencies": {
     "express": "^4.15.4",
     "express-session": "^1.15.5"
   },
   "devDependencies": {
-    "bs-platform": "^1.9.2",
+    "bs-batteries": "0.0.13",
+    "mopho-rest-helper": "^1.0.0",
     "webpack": "^3.6.0"
   },
   "//": {

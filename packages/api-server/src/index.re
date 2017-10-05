@@ -1,6 +1,9 @@
 open Express;
 open Node;
 open Js.Promise;
+open Option;
+
+let flip = BatPervasives.flip;
 
 let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
 let secret = "secret";
@@ -8,6 +11,12 @@ let secure = false;
 let origin = "http://mopho.local";
 
 let app = App.make ();
+
+let corserOpts = Corser.opts origins::[| origin |] supportsCredentials::Js.true_ ();
+App.use app @@ Corser.express corserOpts;
+
+external bodyParserJson : unit => Middleware.t = "json" [@@bs.module "body-parser"];
+App.use app @@ bodyParserJson ();
 
 type session = string;
 module Session = ExpressSession.Make({ type t = session; });
@@ -22,7 +31,7 @@ let generateState ()  => {
         Crypto.randomBytes 16 (fun result => {
             switch result {
                 | `Exception e => reject (Js.Exn.internalToOCamlException @@ Obj.magic e) [@bs]
-                | `Buffer buffer => resolve (Buffer.toStringWithEncoding buffer encoding::"base64") [@bs]
+                | `Buffer buffer => resolve (Base64Url.fromBuffer buffer) [@bs]
             };
         });
     };
@@ -35,8 +44,6 @@ let return500 resp => Response.status resp 500
 generateState ();
 
 App.get app path::"/generate-state" @@ Middleware.fromAsync (fun req resp _ => {
-    Response.set resp "Access-Control-Allow-Origin" origin;
-
     generateState ()
         |> then_ @@ fun state => {
             let success = Session.set req "napster" state;
@@ -54,27 +61,22 @@ App.get app path::"/generate-state" @@ Middleware.fromAsync (fun req resp _ => {
         };
 });
 
-type gatReq = Js.undefined (Js.t {.
-    state: Js.undefined string,
-    code: Js.undefined string
-});
-external gatToReq : Js.Dict.t Js.Json.t => gatReq = "%identity";
-
-let parseAccessTokenResponse req resp (err, res) => {
-    switch res {
-        | None => switch err {
-            | None => `Error ("Unknown error in API request " ^ endpoint)
-            | Some str => `Error str
+let returnAccessTokens resp tokenBody => {
+    switch tokenBody {
+        | `Success body => {
+            Js.log body;
+            resolve @@ Response.sendString resp "ok";
         }
-        | Some res => {
-            switch (Falsy.to_opt res##error) {
-                | Some error => Some error##message
-            };
-        }
+        | `Error error => { Js.log2 "Error:" error; return500 resp }
+        | `NoBody => { Js.log "No Body"; return500 resp }
+        | `NoResponse message => { Js.log2 "No response" message; return500 resp }
+        | `UnknownError => { Js.log "Unknown error"; return500 resp }
+        /* | _ => return500 resp; */
     };
 };
 
-let requestAccessTokens req resp code => {
+let requestAccessTokens resp code => {
+    Js.log "rat";
     Superagent.post "https://api.napster.com/oauth/access_token"
         |> Superagent.Post.send
             {
@@ -85,34 +87,35 @@ let requestAccessTokens req resp code => {
                 "code": code
             }
         |> Superagent.Post.end_
-        |> then_ parseAccessTokenResponse req resp;
+        |> then_ Rest.parseResponse
+        |> then_ @@ returnAccessTokens resp;
 };
 
 let compareState req resp code state => {
-    let optSessionData = Session.get req "napster";
-
-    switch optSessionData {
+    switch (Session.get req "napster") {
         | None => return500 resp
-        | Some actualState => switch (actualState === state) {
-            | false => return500 resp
-            | true => requestAccessTokens req resp code
-        };
+        | Some actualState => {
+            (actualState === state)
+                ? requestAccessTokens resp code
+                : return500 resp
+        }
     };
 };
 
-App.post app path::"/get-access-token/" @@ Middleware.from (fun req resp _ => {
-    let undefReqObj = req |> Request.asJsonObject |> gatToReq;
-    switch (Js.Undefined.to_opt undefReqObj) {
-        | None => return500 resp
-        | Some reqObj => {
-            switch (Js.Undefined.to_opt reqObj##code, Js.Undefined.to_opt reqObj##state) {
+App.post app path::"/get-access-tokens/" @@ Middleware.fromAsync (fun req resp _ => {
+    req
+        |> Request.asJsonObject
+        |> flip Js.Dict.get "body"
+        |> flip bind Js.Json.decodeObject
+        |> map (fun reqObj => {
+            let code = reqObj |> flip Js.Dict.get "code" |> flip bind Js.Json.decodeString;
+            let state = reqObj |> flip Js.Dict.get "state" |> flip bind Js.Json.decodeString;
+            switch (code, state) {
                 | (Some code, Some state) => compareState req resp code state
                 | _ => return500 resp
             };
-        }
-    };
-
-    Response.sendArray resp [||];
+        })
+        |? return500 resp;
 });
 
 App.get app path::"/read-state" @@ Middleware.from (fun req resp _ => {
