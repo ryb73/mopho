@@ -4,12 +4,24 @@ module QsParser = Qs.MakeParser({
     type t = {.
         code: Js.undefined string,
         state: Js.undefined string
-    };
+    } [@@noserialize];
 });
 
 let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
 let hostname = "mopho.local";
 let apiUrl = "//api.mopho.local";
+
+module GetAccessTokens = {
+    type req = {
+        code: string,
+        state: string
+    };
+
+    type resp = {
+        accessToken: string,
+        refreshToken: string
+    };
+};
 
 let getAuthUrl apiState => {
     open Webapi.Dom;
@@ -24,7 +36,7 @@ let doGet endpoint => {
     Superagent.get @@ apiUrl ^ endpoint
     |> Superagent.Get.withCredentials
     |> Superagent.Get.end_
-    |> then_ @@ Rest.parseResponse;
+    |> then_ @@ Rest.parseResponse Js.Json.decodeString;
 };
 
 let doPost endpoint data => {
@@ -32,7 +44,7 @@ let doPost endpoint data => {
     |> Superagent.Post.withCredentials
     |> Superagent.Post.send data
     |> Superagent.Post.end_
-    |> then_ @@ Rest.parseResponse;
+    |> then_ @@ Rest.parseResponse GetAccessTokens.resp__from_json;
 };
 
 let doAuth authState => {
@@ -50,8 +62,10 @@ let beginAuth () => {
                 }
 
                 | `NoResponse message => Js.log message
-                | `Success body => doAuth body##state
-                | _ => Js.log "An unknown error occurred"
+                | `Success state => doAuth state
+                | `InvalidBody body => Js.log2 "invalid body" body
+                | `NoBody => Js.log "No body"
+                | `UnknownError => Js.log "unknown error"
             };
 
             resolve ();
@@ -64,11 +78,29 @@ let beginAuth () => {
     ();
 };
 
+let setTokens { GetAccessTokens.accessToken, refreshToken } => {
+    Js.log3 "tokens: " accessToken refreshToken;
+};
+
 let getTokens code state => {
     doPost "/get-access-tokens/" {
         "code": code,
         "state": state
-    };
+    }
+        |> then_ (fun result => {
+            switch result {
+                | `Error error => {
+                    Js.log error##message;
+                }
+
+                | `NoResponse message => Js.log message
+                | `Success tokens => setTokens tokens
+                | _ => Js.log "An unknown error occurred"
+            };
+
+            resolve ();
+        });
+
     ();
 };
 

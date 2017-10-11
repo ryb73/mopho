@@ -4,26 +4,22 @@ open Js.Promise;
 open Option;
 
 let flip = BatPervasives.flip;
-
-let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
-let secret = "secret";
-let secure = false;
-let origin = "http://mopho.local";
+let config = ConfigLoader.config;
 
 let app = App.make ();
 
-let corserOpts = Corser.opts origins::[| origin |] supportsCredentials::Js.true_ ();
+let corserOpts = Corser.opts origins::[| config.origin |] supportsCredentials::Js.true_ ();
 App.use app @@ Corser.express corserOpts;
 
 external bodyParserJson : unit => Middleware.t = "json" [@@bs.module "body-parser"];
 App.use app @@ bodyParserJson ();
 
 type session = string;
-module Session = ExpressSession.Make({ type t = session; });
+module Session = ExpressSession.Make({ type t = session [@@noserialize]; });
 
 App.use app (ExpressSession.make @@ ExpressSession.opts
-    ::secret resave::false saveUninitialized::false
-    cookie::(ExpressSession.cookieOpts ::secure ()) ()
+    secret::config.sessionSecret resave::false saveUninitialized::false
+    cookie::(ExpressSession.cookieOpts secure::config.secure ()) ()
 );
 
 let generateState ()  => {
@@ -43,13 +39,18 @@ let return500 resp => Response.status resp 500
 
 generateState ();
 
+module GenerateState = {
+    type req = unit;
+    type resp = string;
+};
+
 App.get app path::"/generate-state" @@ Middleware.fromAsync (fun req resp _ => {
     generateState ()
         |> then_ @@ fun state => {
             let success = Session.set req "napster" state;
 
             if(success) {
-                resolve @@ Response.sendObject resp { "state": state };
+                resolve @@ Response.json resp (GenerateState.resp__to_json state);
             } else {
                 return500 resp;
             };
@@ -61,33 +62,55 @@ App.get app path::"/generate-state" @@ Middleware.fromAsync (fun req resp _ => {
         };
 });
 
+module GetAccessTokens = {
+    type req = {
+        code: string,
+        state: string
+    };
+
+    type resp = {
+        accessToken: string,
+        refreshToken: string
+    };
+};
+
+type napsterApiAccessToken = {
+    access_token: string,
+    refresh_token: string,
+    expires_in: int
+};
+
 let returnAccessTokens resp tokenBody => {
     switch tokenBody {
         | `Success body => {
-            Js.log body;
-            resolve @@ Response.sendString resp "ok";
+            GetAccessTokens.{
+                accessToken: body.access_token,
+                refreshToken: body.refresh_token
+            }
+                |> GetAccessTokens.resp__to_json
+                |> Response.json resp
+                |> resolve;
         }
         | `Error error => { Js.log2 "Error:" error; return500 resp }
         | `NoBody => { Js.log "No Body"; return500 resp }
         | `NoResponse message => { Js.log2 "No response" message; return500 resp }
         | `UnknownError => { Js.log "Unknown error"; return500 resp }
-        /* | _ => return500 resp; */
+        | `InvalidBody body => { Js.log2 "Invalid body" body; return500 resp }
     };
 };
 
 let requestAccessTokens resp code => {
-    Js.log "rat";
     Superagent.post "https://api.napster.com/oauth/access_token"
         |> Superagent.Post.send
             {
-                "client_id": apiKey,
-                "client_secret": secret,
+                "client_id": config.napster.apiKey,
+                "client_secret": config.napster.secret,
                 "response_type": "code",
                 "grant_type": "authorization_code",
                 "code": code
             }
         |> Superagent.Post.end_
-        |> then_ Rest.parseResponse
+        |> then_ @@ Rest.parseResponse napsterApiAccessToken__from_json
         |> then_ @@ returnAccessTokens resp;
 };
 
@@ -103,27 +126,14 @@ let compareState req resp code state => {
 };
 
 App.post app path::"/get-access-tokens/" @@ Middleware.fromAsync (fun req resp _ => {
-    req
+    let optAjaxReq = req
         |> Request.asJsonObject
-        |> flip Js.Dict.get "body"
-        |> flip bind Js.Json.decodeObject
-        |> map (fun reqObj => {
-            let code = reqObj |> flip Js.Dict.get "code" |> flip bind Js.Json.decodeString;
-            let state = reqObj |> flip Js.Dict.get "state" |> flip bind Js.Json.decodeString;
-            switch (code, state) {
-                | (Some code, Some state) => compareState req resp code state
-                | _ => return500 resp
-            };
-        })
-        |? return500 resp;
-});
+        |> flip Js.Dict.get "body" |? Js.Json.null
+        |> GetAccessTokens.req__from_json;
 
-App.get app path::"/read-state" @@ Middleware.from (fun req resp _ => {
-    let optSessionData = Session.get req "napster";
-
-    switch optSessionData {
-        | None => Response.sendObject resp { "none": Js.true_ }
-        | Some authState => Response.sendString resp authState
+    switch optAjaxReq {
+        | None => return500 resp
+        | Some { code, state } => compareState req resp code state
     };
 });
 
