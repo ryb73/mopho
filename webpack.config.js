@@ -1,9 +1,5 @@
-const requireGlob = require("require-glob"),
-      _           = require("lodash");
-
-module.exports = _.map(
-    Object.values(
-        requireGlob.sync("./packages/*/webpack.config.js")
-    ),
-    "webpackConfig"
-);
+module.exports = [
+    require("./packages/rest-helper/webpack.config"),
+    require("./packages/api-server/webpack.config"),
+    require("./packages/frame/webpack.config"),
+];
