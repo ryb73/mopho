@@ -7,7 +7,8 @@
         "bs-napster",
         "bs-webapi",
         "bs-qs",
-        "mopho-rest-helper"
+        "mopho-rest-helper",
+        "mopho-api-declarations"
     ],
     "sources" : [
         { "dir" : "src" },

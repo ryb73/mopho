@@ -11,18 +11,6 @@ let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
 let hostname = "mopho.local";
 let apiUrl = "//api.mopho.local";
 
-module GetAccessTokens = {
-    type req = {
-        code: string,
-        state: string
-    };
-
-    type resp = {
-        accessToken: string,
-        refreshToken: string
-    };
-};
-
 let getAuthUrl apiState => {
     open Webapi.Dom;
 
@@ -32,21 +20,6 @@ let getAuthUrl apiState => {
         "&state=" ^ apiState;
 };
 
-let doGet endpoint => {
-    Superagent.get @@ apiUrl ^ endpoint
-    |> Superagent.Get.withCredentials
-    |> Superagent.Get.end_
-    |> then_ @@ Rest.parseResponse Js.Json.decodeString;
-};
-
-let doPost endpoint data => {
-    Superagent.post @@ apiUrl ^ endpoint
-    |> Superagent.Post.withCredentials
-    |> Superagent.Post.send data
-    |> Superagent.Post.end_
-    |> then_ @@ Rest.parseResponse GetAccessTokens.resp__from_json;
-};
-
 let doAuth authState => {
     open Webapi.Dom;
     Location.setHref location @@ getAuthUrl authState;
@@ -54,7 +27,7 @@ let doAuth authState => {
 };
 
 let beginAuth () => {
-    doGet "/generate-state/"
+    Apis.GenerateState.request apiUrl ()
         |> then_ (fun result => {
             switch result {
                 | `Error error => {
@@ -78,15 +51,13 @@ let beginAuth () => {
     ();
 };
 
-let setTokens { GetAccessTokens.accessToken, refreshToken } => {
+let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
     Js.log3 "tokens: " accessToken refreshToken;
 };
 
 let getTokens code state => {
-    doPost "/get-access-tokens/" {
-        "code": code,
-        "state": state
-    }
+    let reqData = { Apis.GetAccessTokens_impl.code, state };
+    Apis.GetAccessTokens.request apiUrl reqData
         |> then_ (fun result => {
             switch result {
                 | `Error error => {

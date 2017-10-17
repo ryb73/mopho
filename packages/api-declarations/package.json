@@ -1,7 +1,7 @@
 {
-  "name": "mopho-rest-helper",
+  "name": "mopho-api-declarations",
   "version": "1.0.0",
-  "description": "Helper for REST requests using bs-superagent",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,11 +10,14 @@
     "clean": "rm -rf lib && bsb -clean-world"
   },
   "keywords": [],
-  "license": "MIT",
+  "license": "GPL-2.0",
   "author": "Ryan Biwer",
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
   "peerDependencies": {
     "bs-platform": "^1.9.3"
+  },
+  "devDependencies": {
+    "mopho-rest-helper": "^1.0.0"
   }
 }
