@@ -10,8 +10,8 @@ let app = App.make ();
 let corserOpts = Corser.opts origins::[| config.origin |] supportsCredentials::Js.true_ ();
 App.use app @@ Corser.express corserOpts;
 
-external bodyParserJson : unit => Middleware.t = "json" [@@bs.module "body-parser"];
-App.use app @@ bodyParserJson ();
+/* external bodyParserJson : unit => Middleware.t = "json" [@@bs.module "body-parser"];
+App.use app @@ bodyParserJson (); */
 
 type session = string;
 module Session = ExpressSession.Make({ type t = session [@@noserialize]; });

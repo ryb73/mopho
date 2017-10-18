@@ -8,8 +8,6 @@ type allowedMethods =
     | Get
     | Post;
 
-external encodeUriComponent : string => string = "encodeURIComponent" [@@bs.val];
-
 module type Definition = {
     type req;
     type resp;
@@ -23,19 +21,41 @@ let return400 resp => Response.status resp 400
     |> resolve;
 
 module Endpoint = fun (Definition : Definition) => {
+    let tryOpt f v => {
+        try (Some (f v)) {
+            | _ => None
+        };
+    };
+
+    let parseGetReq req => {
+        req
+            |> Request.query
+            |> flip Js.Dict.get "json" |? Js.Json.null
+            |> Js.Json.decodeString
+            |> flip Option.bind @@ tryOpt Js.Json.parseExn |? Js.Json.null
+            |> Definition.req__from_json;
+    };
+
+    let parsePostReq req => {
+        req
+            |> Request.asJsonObject
+            |> flip Js.Dict.get "body" |? Js.Json.null
+            |> Definition.req__from_json;
+    };
+
     type handlerResult =
       | Result Definition.resp
       | ExpressAction done_
       [@@noserialize];
 
-    let _handle (expressMethod : App.t => path::string => Middleware.t => unit) (app : App.t) callback =>
-        expressMethod app path::Definition.path @@ Middleware.fromAsync (fun req resp next => {
-            let data = req
-                |> Request.asJsonObject
-                |> flip Js.Dict.get "body" |? Js.Json.null
-                |> Definition.req__from_json;
+    let handle app callback => {
+        let (methodFunc, reqParser) = switch Definition.reqMethod {
+            | Get => (App.get, parseGetReq)
+            | Post => (App.post, parsePostReq)
+        };
 
-            switch data {
+        methodFunc app path::Definition.path @@ Middleware.fromAsync (fun req resp next => {
+            switch (reqParser req) {
                 | None => return400 resp
                 | Some data =>
                     callback req resp next data
@@ -50,23 +70,12 @@ module Endpoint = fun (Definition : Definition) => {
                         });
             };
         });
-
-    let handle app callback => {
-        let methodFunc = switch Definition.reqMethod {
-            | Get => App.get
-            | Post => App.post
-        };
-
-        _handle methodFunc app callback;
     };
 
     let queryJson json req => {
-        Js.Json.stringify json
-            |> encodeUriComponent
-            |> (fun encoded => {
-                let dict = Js.Dict.fromList [("json", encoded)];
-                Superagent.Get.query dict req;
-            });
+        let encoded = Js.Json.stringify json;
+        let dict = Js.Dict.fromList [("json", encoded)];
+        Superagent.Get.query dict req;
     };
 
     let _doGet apiUrl data => {
@@ -83,6 +92,7 @@ module Endpoint = fun (Definition : Definition) => {
             |> Superagent.post
             |> Superagent.Post.withCredentials
             |> Superagent.Post.send @@ Definition.req__to_json data
+            |> (fun x => { Js.log "hoooooook"; x })
             |> Superagent.Post.end_
             |> then_ @@ Rest.parseResponse Definition.resp__from_json;
     };

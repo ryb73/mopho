@@ -9,7 +9,7 @@
     "webpack": "^3.6.0"
   },
   "scripts": {
-    "watch": "webpack -w",
+    "watch": "lerna run clean && webpack -w",
     "bootstrap": "lerna bootstrap"
   }
 }

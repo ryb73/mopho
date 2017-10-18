@@ -5,7 +5,7 @@ module GenerateState = Endpoint({
     type resp = string;
 
     let path = "/generate-state/";
-    let reqMethod = Get;
+    let reqMethod = Post;
 });
 
 module GetAccessTokens_impl = {
@@ -20,7 +20,7 @@ module GetAccessTokens_impl = {
     };
 
     let path = "/get-access-tokens/";
-    let reqMethod = Post;
+    let reqMethod = Get;
 };
 
 module GetAccessTokens = Endpoint(GetAccessTokens_impl);
