@@ -1,4 +1,5 @@
 open Js.Promise;
+open Js.Result;
 
 module QsParser = Qs.MakeParser({
     type t = {.
@@ -10,6 +11,15 @@ module QsParser = Qs.MakeParser({
 let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
 let hostname = "mopho.local";
 let apiUrl = "//api.mopho.local";
+
+let napsterReady = make @@ fun ::resolve reject::_ => {
+    Napster.init apiKey "v2.2";
+    Napster.on Ready (fun d => {
+        Js.log2 "ready!" d;
+        let u = ();
+        resolve u [@bs];
+    });
+};
 
 let getAuthUrl apiState => {
     open Webapi.Dom;
@@ -53,6 +63,28 @@ let beginAuth () => {
 
 let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
     Js.log3 "tokens: " accessToken refreshToken;
+
+    napsterReady
+        |> then_ (fun () => {
+            Napster.setAuth {
+                "accessToken": accessToken,
+                "refreshToken": refreshToken
+            };
+
+            /* Napster.load (); */
+
+            Napster.Api.me ();
+        })
+        |> then_ (fun result => {
+            switch result {
+                | Ok data => Js.log2 "OK" data
+                | Error err => Js.log2 "Error" err
+            };
+
+            resolve ();
+        });
+
+    ();
 };
 
 let getTokens code state => {

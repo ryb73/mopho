@@ -1,4 +1,5 @@
 open Js.Promise;
+open Js.Result;
 
 let parseResponse bodyParser (err, res) => {
     resolve @@ switch res {
@@ -12,8 +13,8 @@ let parseResponse bodyParser (err, res) => {
             | None => switch (Js.Nullable.to_opt res##body) {
                 | None => `NoBody
                 | Some body => switch (bodyParser body) {
-                    | None => `InvalidBody body
-                    | Some parsedBody => `Success parsedBody
+                    | Error optKey => `InvalidBody (body, optKey)
+                    | Ok parsedBody => `Success parsedBody
                 }
             }
         }

@@ -1,6 +1,7 @@
 open Express;
 open Option;
 open Js.Promise;
+open Js.Result;
 
 let flip = BatPervasives.flip;
 
@@ -56,8 +57,8 @@ module Endpoint = fun (Definition : Definition) => {
 
         methodFunc app path::Definition.path @@ Middleware.fromAsync (fun req resp next => {
             switch (reqParser req) {
-                | None => return400 resp
-                | Some data =>
+                | Error _ => return400 resp
+                | Ok data =>
                     callback req resp next data
                         |> then_ (fun result => {
                             switch result {

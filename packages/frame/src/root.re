@@ -1,9 +1,9 @@
 type state = {
     error: bool
-};
+} [@@noserialize];
 
 type action =
-  | Error;
+  | Error [@@noserialize];
 
 let component = ReasonReact.reducerComponent "Page";
 
@@ -19,7 +19,7 @@ let make _ => {
     }); */
 
     Napster.on Error (fun error => {
-        Js.log @@ "Error: " ^ {j|$error|j};
+        Js.log2 "Error:" error;
     });
 
     let renderError =
