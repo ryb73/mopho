@@ -93,7 +93,6 @@ module Endpoint = fun (Definition : Definition) => {
             |> Superagent.post
             |> Superagent.Post.withCredentials
             |> Superagent.Post.send @@ Definition.req__to_json data
-            |> (fun x => { Js.log "hoooooook"; x })
             |> Superagent.Post.end_
             |> then_ @@ Rest.parseResponse Definition.resp__from_json;
     };

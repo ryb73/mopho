@@ -1,0 +1,28 @@
+.foundation {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    > .top-bar {
+        flex-basis: 24px;
+    }
+
+    > .center-bar {
+        flex-grow: 1;
+
+        display: flex;
+
+        > .left-pane {
+            flex-grow: 1;
+            min-width: 100px;
+        }
+
+        > .main-pane {
+            flex-grow: 4;
+        }
+    }
+
+    > .bottom-bar {
+        flex-basis: 72px;
+    }
+}
