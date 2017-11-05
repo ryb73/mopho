@@ -16,23 +16,11 @@
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
   "peerDependencies": {
-    "bs-platform": "^1.9.3"
-  },
-  "dependencies": {
-    "express": "^4.15.4",
-    "express-session": "^1.15.5"
+    "bs-platform": "^2.0.0"
   },
   "devDependencies": {
-    "bs-batteries": "0.0.13",
     "mopho-api-declarations": "^1.0.0",
     "mopho-rest-helper": "^1.0.0",
     "webpack": "^3.6.0"
-  },
-  "//": {
-    "linked dependencies": [
-      "bs-express",
-      "bs-node",
-      "bs-express-session"
-    ]
   }
 }

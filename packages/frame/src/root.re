@@ -11,11 +11,13 @@ let make _ => {
     ...component,
 
     render: fun { state } => {
-        if(state.isAuthenticated) {
+        let content = if(state.isAuthenticated) {
             <Foundation />;
         } else {
             <Login />;
-        }
+        };
+
+        <div className="root">(content)</div>
     },
 
     initialState: fun () => {

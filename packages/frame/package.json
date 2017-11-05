@@ -16,7 +16,7 @@
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
   "peerDependencies": {
-    "bs-platform": "^1.9.3"
+    "bs-platform": "^2.0.0"
   },
   "devDependencies": {
     "bs-webapi": "^0.7.0",
@@ -35,8 +35,5 @@
     "sass-loader": "^6.0.6",
     "simple-oauth2": "^1.3.0",
     "webpack": "^3.6.0"
-  },
-  "dependencies": {
-    "superagent": "^3.6.0"
   }
 }

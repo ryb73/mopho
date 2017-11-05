@@ -1,5 +1,5 @@
 {
-  "name": "mopho-api-declarations",
+  "name": "mopho-iframe-comm",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -18,7 +18,6 @@
     "bs-platform": "^2.0.0"
   },
   "devDependencies": {
-    "mopho-rest-helper": "^1.0.0",
-    "webpack": "^3.8.1"
+    "bs-webapi": "^0.7.0"
   }
 }

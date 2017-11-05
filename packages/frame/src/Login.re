@@ -7,25 +7,21 @@ type action =
 
 let component = ReasonReact.reducerComponent "Login";
 
-let goNapster _ _ => ();
-
-let renderLoginOptions { ReasonReact.handle } =>
-    <div className="login">
+let renderLoginOptions { ReasonReact.reduce } =>
+    <div>
         <h1>(s2e "welcome to mopho.")</h1>
         <p>
             (s2e "sign in with:")
-            <ul>
-                <li>
-                    <a href="#" onClick={handle goNapster}>(s2e "Napster")</a>
-                </li>
-            </ul>
         </p>
+
+        <ul>
+            <li>
+                <a href="#" onClick={reduce (fun _ => EnterAuthFlow)}>(s2e "Napster")</a>
+            </li>
+        </ul>
     </div>;
 
-let renderAuthIFrame () => {
-    let styles = ReactDOMRe.Style.make width::"100%" height::"100%" border::"0" ();
-    <iframe src="napster-auth.html" style=styles />
-};
+let renderAuthIFrame () => <iframe src="napster-auth.html" />;
 
 let make _ => {
     ...component,
@@ -33,11 +29,13 @@ let make _ => {
     render: fun self => {
         let { ReasonReact.state } = self;
 
-        if(state) {
+        let content = if(state) {
             renderAuthIFrame ();
         } else {
             renderLoginOptions self;
-        }
+        };
+
+        <div className="login">(content)</div>;
     },
 
     initialState: fun () => false,
