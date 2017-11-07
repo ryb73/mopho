@@ -5,15 +5,19 @@
   "author": "Ryan Biwer <ryan@brightcellars.com>",
   "license": "GPL-2.0",
   "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
     "css-loader": "^0.28.7",
+    "extract-text-webpack-plugin": "^3.0.2",
     "lerna": "^2.2.0",
     "node-sass": "^4.5.3",
+    "raw-loader": "^0.5.1",
     "sass-loader": "^6.0.6",
     "webpack": "^3.6.0"
   },
   "scripts": {
-    "watch": "npm run clean && webpack -w --progress",
+    "watch": "npm run clean && webpack -w",
     "bootstrap": "lerna bootstrap",
-    "clean": "lerna run clean"
+    "clean": "rm .merlin; lerna run clean"
   }
 }
