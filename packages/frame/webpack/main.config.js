@@ -26,7 +26,8 @@ module.exports = {
                 use: {
                     loader: "bs-loader",
                     options: {
-                        cwd: rel("")
+                        cwd: rel(""),
+                        excludedWarnings: /.*Duplicated package:.+\n?/g
                     }
                 }
             },

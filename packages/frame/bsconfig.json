@@ -8,7 +8,8 @@
         "bs-webapi",
         "bs-qs",
         "mopho-rest-helper",
-        "mopho-api-declarations"
+        "mopho-api-declarations",
+        "mopho-iframe-comm"
     ],
     "sources" : [
         { "dir" : "src" },

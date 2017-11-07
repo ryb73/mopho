@@ -18,6 +18,7 @@
     "bs-platform": "^2.0.0"
   },
   "devDependencies": {
-    "bs-webapi": "^0.7.0"
+    "bs-webapi": "^0.7.0",
+    "webpack": "^3.8.1"
   }
 }

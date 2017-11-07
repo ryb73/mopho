@@ -12,7 +12,8 @@
     "webpack": "^3.6.0"
   },
   "scripts": {
-    "watch": "lerna run clean && webpack -w --progress",
-    "bootstrap": "lerna bootstrap"
+    "watch": "npm run clean && webpack -w --progress",
+    "bootstrap": "lerna bootstrap",
+    "clean": "lerna run clean"
   }
 }

@@ -26,6 +26,7 @@
     "font-awesome": "^4.7.0",
     "gridlex": "^2.4.1",
     "mopho-api-declarations": "^1.0.0",
+    "mopho-iframe-comm": "^1.0.0",
     "mopho-rest-helper": "^1.0.0",
     "node-sass": "^4.5.3",
     "qs": "^6.5.1",

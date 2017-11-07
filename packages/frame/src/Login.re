@@ -1,6 +1,9 @@
 let s2e = ReasonReact.stringToElement;
 
-type state = bool [@@noserialize];
+type state = {
+    inAuthFlow: bool,
+    iframeRef: ref (option Dom.element)
+ } [@@noserialize];
 
 type action =
   | EnterAuthFlow [@@noserialize];
@@ -21,6 +24,8 @@ let renderLoginOptions { ReasonReact.reduce } =>
         </ul>
     </div>;
 
+IframeComm.post LoggedIn ;
+
 let renderAuthIFrame () => <iframe src="napster-auth.html" />;
 
 let make _ => {
@@ -38,11 +43,11 @@ let make _ => {
         <div className="login">(content)</div>;
     },
 
-    initialState: fun () => false,
+    initialState: fun () => { inAuthFlow: false, iframeRef: ref None },
 
-    reducer: fun action _ => {
+    reducer: fun action state => {
         switch action {
-            | EnterAuthFlow => ReasonReact.Update true
+            | EnterAuthFlow => ReasonReact.Update true /* { ...state, inAuthFlow: true } */
         };
     }
 };
