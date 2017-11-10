@@ -1,5 +1,6 @@
 open Js.Promise;
 open Js.Result;
+open ReDomSuite;
 
 module QsParser = Qs.MakeParser({
     type t = {.
@@ -9,7 +10,7 @@ module QsParser = Qs.MakeParser({
 });
 
 let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
-let hostname = "mopho.local";
+let hostname = "www.mopho.local";
 let apiUrl = "//api.mopho.local";
 
 let napsterReady = make @@ fun ::resolve reject::_ => {
@@ -61,6 +62,11 @@ let beginAuth () => {
     ();
 };
 
+let loginSuccess () => {
+    let window = Window.parent ReDom.window;
+    IFrameComm.post IFrameComm.LoggedIn "http://www.mopho.local/" window;
+};
+
 let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
     Js.log3 "tokens: " accessToken refreshToken;
 
@@ -77,7 +83,7 @@ let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
         })
         |> then_ (fun result => {
             switch result {
-                | Ok data => Js.log2 "OK" data
+                | Ok _ => loginSuccess ();
                 | Error err => Js.log2 "Error" err
             };
 

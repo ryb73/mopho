@@ -1,12 +1,18 @@
+open ReDomSuite;
+open Option;
+open Option.Infix;
+
+let flip = BatPervasives.flip;
 let s2e = ReasonReact.stringToElement;
 
-type state = {
-    inAuthFlow: bool,
-    iframeRef: ref (option Dom.element)
- } [@@noserialize];
+type state =
+    | Options
+    | InAuthFlow
+    | ErrorOccurred [@@noserialize];
 
 type action =
-  | EnterAuthFlow [@@noserialize];
+    | EnterAuthFlow
+    | SetError [@@noserialize];
 
 let component = ReasonReact.reducerComponent "Login";
 
@@ -24,9 +30,25 @@ let renderLoginOptions { ReasonReact.reduce } =>
         </ul>
     </div>;
 
-IframeComm.post LoggedIn ;
+let go reduce action => reduce (fun _ => action) ();
 
-let renderAuthIFrame () => <iframe src="napster-auth.html" />;
+let iFrameMounted element { ReasonReact.reduce } => {
+    element
+        |> Js.Null.to_opt
+        |> map Element.make
+        >>= IFrame.cast
+        |> map IFrame.contentWindow
+        |> map @@
+            IFrameComm.listen IFrameComm.LoggedIn "http://www.mopho.local" (fun LoggedIn => {
+                Js.log "logged in!!";
+                ();
+            });
+
+    ();
+};
+
+let renderAuthIFrame { ReasonReact.handle } =>
+    <iframe src="napster-auth.html" ref={handle iFrameMounted} />;
 
 let make _ => {
     ...component,
@@ -34,20 +56,21 @@ let make _ => {
     render: fun self => {
         let { ReasonReact.state } = self;
 
-        let content = if(state) {
-            renderAuthIFrame ();
-        } else {
-            renderLoginOptions self;
+        let content = switch(state) {
+            | InAuthFlow => renderAuthIFrame self
+            | Options => renderLoginOptions self
+            | ErrorOccurred => s2e "Error"
         };
 
         <div className="login">(content)</div>;
     },
 
-    initialState: fun () => { inAuthFlow: false, iframeRef: ref None },
+    initialState: fun () => Options,
 
-    reducer: fun action state => {
+    reducer: fun action _ => {
         switch action {
-            | EnterAuthFlow => ReasonReact.Update true /* { ...state, inAuthFlow: true } */
+            | EnterAuthFlow => ReasonReact.Update InAuthFlow
+            | SetError => ReasonReact.Update ErrorOccurred
         };
     }
 };

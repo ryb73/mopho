@@ -1,11 +1,11 @@
 {
-    "name" : "iframe-comm",
-    "bs-dependencies": [ "bs-webapi", "bs-batteries" ],
+    "name" : "mopho-iframe-comm",
+    "bs-dependencies": [
+        "bs-batteries",
+        "redom"
+    ],
     "sources" : [
-        {
-            "dir": "src",
-            "public": [ "IframeComm" ]
-        },
+        { "dir": "src" },
         {
             "dir": "test",
             "type": "dev"

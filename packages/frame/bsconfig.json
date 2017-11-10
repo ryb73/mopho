@@ -9,7 +9,9 @@
         "bs-qs",
         "mopho-rest-helper",
         "mopho-api-declarations",
-        "mopho-iframe-comm"
+        "mopho-iframe-comm",
+        "redom",
+        "bs-batteries"
     ],
     "sources" : [
         { "dir" : "src" },
