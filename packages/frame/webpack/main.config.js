@@ -11,7 +11,7 @@ module.exports = {
 
     entry: {
         index: rel("src/index.re"),
-        "napster-auth": rel("src/napsterAuth.re"),
+        "napster-auth": rel("src/NapsterAuth.re"),
     },
 
     output: {

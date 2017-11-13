@@ -32,7 +32,7 @@ let renderLoginOptions { ReasonReact.reduce } =>
 
 let go reduce action => reduce (fun _ => action) ();
 
-let iFrameMounted element { ReasonReact.reduce } => {
+let iFrameMounted element /* { ReasonReact.reduce } */ _ => {
     element
         |> Js.Null.to_opt
         |> map Element.make

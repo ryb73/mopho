@@ -8,6 +8,7 @@ function rel(relPath) {
 module.exports = [
     require("./packages/rest-helper/webpack.config"),
     require("./packages/api-declarations/webpack.config"),
+    require("./packages/db/webpack.config"),
     require("./packages/api-server/webpack.config"),
     require("./packages/iframe-comm/webpack.config"),
     ...require("./packages/frame/webpack.config"),
@@ -45,7 +46,7 @@ module.exports = [
         stats: {
             assets: true,
 
-            errors: false,
+            errors: true, // I'd like to set this to false but it's causing errors to be suppressed for other children
             warnings: false,
             timings: false,
             cached: false,

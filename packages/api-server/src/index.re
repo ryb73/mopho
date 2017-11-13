@@ -5,6 +5,8 @@ open Js.Promise;
 let flip = BatPervasives.flip;
 let config = ConfigLoader.config;
 
+module NapsterApi = NapsterApi.Make({ let apiKey = config.napster.apiKey });
+
 let app = App.make ();
 
 let corserOpts = Corser.opts origins::[| config.origin |] supportsCredentials::Js.true_ ();
@@ -13,8 +15,15 @@ App.use app @@ Corser.express corserOpts;
 /* external bodyParserJson : unit => Middleware.t = "json" [@@bs.module "body-parser"];
 App.use app @@ bodyParserJson (); */
 
-type session = string;
-module Session = ExpressSession.Make({ type t = session [@@noserialize]; });
+type session = {
+    state: option string,
+    napsterAccessToken: option string
+};
+
+module Session = ExpressSession.Make({
+    type t = session;
+    let key = "mopho-api-server";
+});
 
 App.use app (ExpressSession.make @@ ExpressSession.opts
     secret::config.sessionSecret resave::false saveUninitialized::false
@@ -35,23 +44,57 @@ let generateState ()  => {
 let return500 resp => Response.status resp 500
     |> Response.end_;
 
+let getSession req => {
+    switch (Session.get req) {
+        | Some session => session
+        | None => {
+            Js.log "No session";
+            { state: None, napsterAccessToken: None }
+        };
+    };
+};
+
 Apis.GenerateState.(
     handle app (fun req resp _ _ => {
         generateState ()
             |> then_ @@ fun state => {
-                if(Session.set req "napster" state) {
+                let curSess = getSession req;
+
+                if(Session.set req { ...curSess, state: Some state }) {
                     resolve @@ Result state;
                 } else {
                     resolve @@ ExpressAction (return500 resp);
                 };
             }
-
             |> catch @@ fun error => {
                 Js.log error;
                 resolve @@ ExpressAction (return500 resp);
             };
     })
 );
+
+let getUserIdFromNapsterMember { NapsterApi.id, realName } => {
+    Db.User.getFromNapsterId id
+        |> then_ (fun userId => {
+            switch userId {
+                | None => Db.User.create realName
+                | Some userId => resolve userId
+            };
+        });
+};
+
+let saveNapsterTokens req accessToken refreshToken userId => {
+    Db.User.saveNapsterRefreshToken userId refreshToken;
+
+    let session = getSession req;
+    if(Session.set req { ...session, napsterAccessToken: Some accessToken }) {
+        resolve userId;
+    } else {
+        failwith "Error saving access token";
+    }
+};
+
+let setLoggedInAs _userId => failwith "TODO";
 
 type napsterApiAccessToken = {
     access_token: string,
@@ -61,6 +104,22 @@ type napsterApiAccessToken = {
 
 let () = {
     open Apis.GetAccessTokens;
+
+    let loginWithToken req tokenBody => {
+        switch tokenBody {
+            | `Success body =>
+                NapsterApi.me body.access_token
+                    |> then_ (fun {  NapsterApi.me } => resolve me)
+                    |> then_ getUserIdFromNapsterMember
+                    |> then_ @@ saveNapsterTokens req body.access_token body.refresh_token
+                    |> then_ setLoggedInAs;
+
+            | _ => {
+                Js.log tokenBody;
+                failwith "Couldn't get access token";
+            }
+        };
+    };
 
     let returnAccessTokens resp tokenBody => {
         switch tokenBody {
@@ -77,7 +136,7 @@ let () = {
         };
     };
 
-    let requestAccessTokens resp code => {
+    let requestAccessTokens req resp code => {
         let reqData = Js.Dict.fromList [
             ("client_id", config.napster.apiKey),
             ("client_secret", config.napster.secret),
@@ -92,15 +151,17 @@ let () = {
             |> Superagent.Post.send reqData
             |> Superagent.Post.end_
             |> then_ @@ Rest.parseResponse napsterApiAccessToken__from_json
+            |> then_ @@ loginWithToken req
             |> then_ @@ returnAccessTokens resp;
     };
 
     let compareState req resp code state => {
-        switch (Session.get req "napster") {
+        let session = getSession req;
+        switch session.state {
             | None => resolve @@ ExpressAction (return500 resp)
             | Some actualState => {
                 (actualState === state)
-                    ? requestAccessTokens resp code
+                    ? requestAccessTokens req resp code
                     : resolve @@ ExpressAction (return500 resp)
             }
         };

@@ -1,5 +1,4 @@
 open Js.Promise;
-open Js.Result;
 open ReDomSuite;
 
 module QsParser = Qs.MakeParser({
@@ -13,6 +12,8 @@ let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
 let hostname = "www.mopho.local";
 let apiUrl = "//api.mopho.local";
 
+module NapsterApi = NapsterApi.Make({ let apiKey = apiKey; });
+
 let napsterReady = make @@ fun ::resolve reject::_ => {
     Napster.init apiKey "v2.2";
     Napster.on Ready (fun d => {
@@ -23,17 +24,14 @@ let napsterReady = make @@ fun ::resolve reject::_ => {
 };
 
 let getAuthUrl apiState => {
-    open Webapi.Dom;
-
-    let redirectUri = Location.href location;
+    let redirectUri = Location.href ReDom.location;
     "https://api.napster.com/oauth/authorize?client_id=" ^ apiKey ^
         "&redirect_uri=" ^ redirectUri ^ "&response_type=code" ^
         "&state=" ^ apiState;
 };
 
 let doAuth authState => {
-    open Webapi.Dom;
-    Location.setHref location @@ getAuthUrl authState;
+    Location.setHref ReDom.location @@ getAuthUrl authState;
     ();
 };
 
@@ -62,9 +60,10 @@ let beginAuth () => {
     ();
 };
 
-let loginSuccess () => {
+let loginSuccess _ => {
     let window = Window.parent ReDom.window;
     IFrameComm.post IFrameComm.LoggedIn "http://www.mopho.local/" window;
+    resolve ();
 };
 
 let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
@@ -79,14 +78,11 @@ let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
 
             /* Napster.load (); */
 
-            Napster.Api.me ();
+            NapsterApi.me accessToken;
         })
-        |> then_ (fun result => {
-            switch result {
-                | Ok _ => loginSuccess ();
-                | Error err => Js.log2 "Error" err
-            };
-
+        |> then_ loginSuccess
+        |> catch (fun err => {
+            Js.log2 "Error" (Js.String.make err);
             resolve ();
         });
 
@@ -113,8 +109,8 @@ let getTokens code state => {
     ();
 };
 
-let qs = Webapi.Dom.location
-    |> Webapi.Dom.Location.search
+let qs = ReDom.location
+    |> Location.search
     |> Js.String.substr from::1
     |> QsParser.parse;
 

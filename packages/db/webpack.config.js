@@ -1,15 +1,15 @@
-const path              = require("path"),
-      webpack           = require("webpack");
+const path    = require("path"),
+      webpack = require("webpack");
 
 function rel(relPath) {
     return path.resolve(__dirname, relPath)
 }
 
 module.exports = {
-    name: "api-server",
+    name: "db",
 
     entry: {
-        index: rel("src/index.re"),
+        index: rel("src/Db.re"),
     },
 
     output: {
@@ -33,7 +33,6 @@ module.exports = {
     resolve: {
         extensions: ['.re', '.ml', '.js'],
         alias: {
-            express: rel("dummy.js"),
             mysql: rel("dummy.js"),
             browser: rel("dummy.js"),
         }

@@ -17,7 +17,7 @@ module type Definition = {
     let reqMethod : allowedMethods;
 };
 
-let return400 resp => Response.status resp 400
+let returnCode code resp => Response.status resp code
     |> Response.end_
     |> resolve;
 
@@ -57,7 +57,7 @@ module Endpoint = fun (Definition : Definition) => {
 
         methodFunc app path::Definition.path @@ Middleware.fromAsync (fun req resp next => {
             switch (reqParser req) {
-                | Error _ => return400 resp
+                | Error _ => returnCode 400 resp
                 | Ok data =>
                     callback req resp next data
                         |> then_ (fun result => {
