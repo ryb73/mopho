@@ -40,7 +40,14 @@ module.exports = [
         },
 
         plugins: [
-            new ExtractTextPlugin(".." + rel(".merlin")) // relative to /dev/ (ugh)
+            new ExtractTextPlugin(".." + rel(".merlin")), // relative to /dev/ (ugh)
+            {
+                apply: (compiler) => {
+                    compiler.plugin("invalid", (fileName) => {
+                        console.log("File changed: " + path.relative(rel("packages"), fileName));
+                    });
+                }
+            }
         ],
 
         stats: {

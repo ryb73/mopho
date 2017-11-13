@@ -1,4 +1,5 @@
 const path              = require("path"),
+      fs                = require("fs"),
       webpack           = require("webpack");
 
 function rel(relPath) {
@@ -39,6 +40,21 @@ module.exports = {
         }
     },
 
+    plugins: [
+        new webpack.WatchIgnorePlugin([
+            rel("node_modules/"),
+            ...getSymlinkedDirs()
+        ]),
+
+        {
+            apply: (compiler) => {
+                compiler.plugin("invalid", (fileName) => {
+                    console.log("File changed: " + path.relative(rel(".."), fileName));
+                });
+            }
+        }
+    ],
+
     stats: {
         errors: true,
         errorDetails: true,
@@ -64,3 +80,22 @@ module.exports = {
         version: false,
     }
 };
+
+function getSymlinkedDirs(nodeModulesPath) {
+    if(!nodeModulesPath)
+        return getSymlinkedDirs(rel("node_modules/"))
+            .filter((pathname) => {
+                return path.relative(rel("../.."), pathname).indexOf("..") >= 0;
+            });
+
+    if(!fs.existsSync(nodeModulesPath))
+        return [];
+
+    return fs.readdirSync(nodeModulesPath)
+        .map((dirName) => path.join(nodeModulesPath, dirName))
+        .filter((path) => fs.lstatSync(path).isSymbolicLink())
+        .map((path) => fs.realpathSync(path))
+        .reduce((previousPaths, pathname) => {
+            return [ ...previousPaths, pathname, ...getSymlinkedDirs(path.join(pathname, "node_modules/")) ];
+        }, []);
+}
