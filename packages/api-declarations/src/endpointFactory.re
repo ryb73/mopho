@@ -22,7 +22,7 @@ let returnCode code resp => Response.status resp code
     |> resolve;
 
 module Endpoint = fun (Definition : Definition) => {
-    let tryOpt f v => {
+    let _tryOpt f v => {
         try (Some (f v)) {
             | _ => None
         };
@@ -33,7 +33,7 @@ module Endpoint = fun (Definition : Definition) => {
             |> Request.query
             |> flip Js.Dict.get "json" |? Js.Json.null
             |> Js.Json.decodeString
-            |> flip Option.bind @@ tryOpt Js.Json.parseExn |? Js.Json.null
+            |> flip Option.bind @@ _tryOpt Js.Json.parseExn |? Js.Json.null
             |> Definition.req__from_json;
     };
 
@@ -46,6 +46,7 @@ module Endpoint = fun (Definition : Definition) => {
 
     type handlerResult =
       | Result Definition.resp
+      | ErrorCode int
       | ExpressAction done_
       [@@noserialize];
 
@@ -63,11 +64,16 @@ module Endpoint = fun (Definition : Definition) => {
                         |> then_ (fun result => {
                             switch result {
                                 | ExpressAction a => resolve a
+                                | ErrorCode code => returnCode code resp
                                 | Result r =>
                                     Definition.resp__to_json r
                                         |> Response.sendJson resp
                                         |> resolve
                             };
+                        })
+                        |> catch (fun err => {
+                            Js.log2 ("Error in " ^ Definition.path ^ ":") err;
+                            returnCode 500 resp;
                         });
             };
         });

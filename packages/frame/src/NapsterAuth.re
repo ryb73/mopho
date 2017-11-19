@@ -1,4 +1,5 @@
 open Js.Promise;
+open PromiseEx;
 open ReDomSuite;
 
 module QsParser = Qs.MakeParser({
@@ -37,76 +38,28 @@ let doAuth authState => {
 
 let beginAuth () => {
     Apis.GenerateState.request apiUrl ()
-        |> then_ (fun result => {
+        |> map (fun result => {
             switch result {
-                | `Error error => {
-                    Js.log error##message;
-                }
-
-                | `NoResponse message => Js.log message
                 | `Success state => doAuth state
-                | `InvalidBody body => Js.log2 "invalid body" body
-                | `NoBody => Js.log "No body"
-                | `UnknownError => Js.log "unknown error"
+                | _ => Js.log2 "Error:" result
             };
-
-            resolve ();
-        })
-        |> catch (fun exn => {
-            Js.log exn;
-            resolve ();
         });
-
-    ();
 };
 
-let loginSuccess _ => {
+let sendCode mophoCode => {
     let window = Window.parent ReDom.window;
-    IFrameComm.post IFrameComm.LoggedIn "http://www.mopho.local/" window;
-    resolve ();
+    IFrameComm.post (IFrameComm.LoggedIn mophoCode) "http://www.mopho.local/" window;
 };
 
-let setTokens { Apis.GetAccessTokens_impl.accessToken, refreshToken  } => {
-    Js.log3 "tokens: " accessToken refreshToken;
-
-    napsterReady
-        |> then_ (fun () => {
-            Napster.setAuth {
-                "accessToken": accessToken,
-                "refreshToken": refreshToken
-            };
-
-            /* Napster.load (); */
-
-            NapsterApi.me accessToken;
-        })
-        |> then_ loginSuccess
-        |> catch (fun err => {
-            Js.log2 "Error" (Js.String.make err);
-            resolve ();
-        });
-
-    ();
-};
-
-let getTokens code state => {
-    let reqData = { Apis.GetAccessTokens_impl.code, state };
-    Apis.GetAccessTokens.request apiUrl reqData
-        |> then_ (fun result => {
+let getMophoCode code state => {
+    let reqData = { Apis.NapsterAuth_impl.code, state };
+    Apis.NapsterAuth.request apiUrl reqData
+        |> map (fun result => {
             switch result {
-                | `Error error => {
-                    Js.log error##message;
-                }
-
-                | `NoResponse message => Js.log message
-                | `Success tokens => setTokens tokens
-                | _ => Js.log "An unknown error occurred"
+                | `Success { Apis.NapsterAuth_impl.mophoCode  } => sendCode mophoCode
+                | _ => Js.log2 "Error:" result
             };
-
-            resolve ();
         });
-
-    ();
 };
 
 let qs = ReDom.location
@@ -114,7 +67,13 @@ let qs = ReDom.location
     |> Js.String.substr from::1
     |> QsParser.parse;
 
-switch (Js.Undefined.to_opt qs##code, Js.Undefined.to_opt qs##state) {
-    | (Some code, Some state) => getTokens code state
+let promise = switch (Js.Undefined.to_opt qs##code, Js.Undefined.to_opt qs##state) {
+    | (Some code, Some state) => getMophoCode code state
     | _ => beginAuth ()
 };
+
+promise
+    |> catch (fun exn => {
+        Js.log exn;
+        resolve ();
+    });

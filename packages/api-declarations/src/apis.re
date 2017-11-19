@@ -8,19 +8,28 @@ module GenerateState = Endpoint({
     let reqMethod = Post;
 });
 
-module GetAccessTokens_impl = {
+module NapsterAuth_impl = {
     type req = {
         code: string,
         state: string
     };
 
     type resp = {
-        accessToken: string,
-        refreshToken: string
+        mophoCode: string
     };
 
-    let path = "/get-access-tokens/";
+    let path = "/napster-auth/";
     let reqMethod = Get;
 };
 
-module GetAccessTokens = Endpoint(GetAccessTokens_impl);
+module NapsterAuth = Endpoint(NapsterAuth_impl);
+
+module ExchangeAuthCode_impl = {
+    type req = string;
+    type resp = { authToken: string };
+
+    let path = "/exchange-auth-code/";
+    let reqMethod = Post;
+};
+
+module ExchangeAuthCode = Endpoint(ExchangeAuthCode_impl);

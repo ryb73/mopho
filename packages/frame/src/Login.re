@@ -32,6 +32,10 @@ let renderLoginOptions { ReasonReact.reduce } =>
 
 let go reduce action => reduce (fun _ => action) ();
 
+let loginWithCode code => {
+    Apis.ExchangeAuthCode.request;
+};
+
 let iFrameMounted element /* { ReasonReact.reduce } */ _ => {
     element
         |> Js.Null.to_opt
@@ -39,9 +43,10 @@ let iFrameMounted element /* { ReasonReact.reduce } */ _ => {
         >>= IFrame.cast
         |> map IFrame.contentWindow
         |> map @@
-            IFrameComm.listen IFrameComm.LoggedIn "http://www.mopho.local" (fun LoggedIn => {
-                Js.log "logged in!!";
-                ();
+            IFrameComm.listen "http://www.mopho.local" (fun message => {
+                switch message {
+                    | LoggedIn code => Js.log2 "logged in!!" code;
+                };
             });
 
     ();

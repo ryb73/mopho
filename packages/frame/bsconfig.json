@@ -11,7 +11,8 @@
         "mopho-api-declarations",
         "mopho-iframe-comm",
         "redom",
-        "bs-batteries"
+        "bs-batteries",
+        "bs-promise-ex"
     ],
     "sources" : [
         { "dir" : "src" },

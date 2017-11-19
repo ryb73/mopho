@@ -1,16 +1,16 @@
-const path    = require("path"),
+const path              = require("path"),
       fs                = require("fs"),
-      webpack = require("webpack");
+      webpack           = require("webpack");
 
 function rel(relPath) {
     return path.resolve(__dirname, relPath)
 }
 
 module.exports = {
-    name: "db",
+    name: "std",
 
     entry: {
-        index: rel("src/Db.re"),
+        index: rel("src/Std.re"),
     },
 
     output: {
@@ -33,9 +33,6 @@ module.exports = {
 
     resolve: {
         extensions: ['.re', '.ml', '.js'],
-        alias: {
-            mysql: rel("dummy.js"),
-        }
     },
 
     plugins: [

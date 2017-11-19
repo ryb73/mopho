@@ -2,7 +2,13 @@
     "name" : "mopho-db",
     "bs-dependencies": [
         "bs-mysql",
-        "bs-config"
+        "bs-config",
+        "bs-squel",
+        "bs-promise-ex",
+        "mopho-std",
+        "bs-base64url",
+        "bs-batteries",
+        "bs-moment"
     ],
     "sources" : [
         {

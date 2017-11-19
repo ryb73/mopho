@@ -6,6 +6,7 @@ function rel(relPath) {
 }
 
 module.exports = [
+    require("./packages/std/webpack.config"),
     require("./packages/rest-helper/webpack.config"),
     require("./packages/api-declarations/webpack.config"),
     require("./packages/db/webpack.config"),
@@ -41,13 +42,13 @@ module.exports = [
 
         plugins: [
             new ExtractTextPlugin(".." + rel(".merlin")), // relative to /dev/ (ugh)
-            {
-                apply: (compiler) => {
-                    compiler.plugin("invalid", (fileName) => {
-                        console.log("File changed: " + path.relative(rel("packages"), fileName));
-                    });
-                }
-            }
+            // {
+            //     apply: (compiler) => {
+            //         compiler.plugin("invalid", (fileName) => {
+            //             console.log("File changed: " + path.relative(rel("packages"), fileName));
+            //         });
+            //     }
+            // }
         ],
 
         stats: {

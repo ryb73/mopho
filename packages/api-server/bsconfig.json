@@ -12,7 +12,9 @@
         "bs-config",
         "mopho-api-declarations",
         "bs-napster-api",
-        "mopho-db"
+        "mopho-db",
+        "bs-promise-ex",
+        "mopho-std"
     ],
     "sources" : [
         { "dir" : "src" },

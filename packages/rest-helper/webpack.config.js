@@ -10,7 +10,7 @@ module.exports = {
     name: "rest-helper",
 
     entry: {
-        index: rel("src/rest.re"),
+        index: rel("src/Rest.re"),
     },
 
     output: {
@@ -20,17 +20,15 @@ module.exports = {
 
     module: {
         noParse: /node_modules/,
-        rules: [
-            {
-                test: /\.(re|ml)$/,
-                use: {
-                    loader: "bs-loader",
-                    options: {
-                        cwd: __dirname
-                    }
+        rules: [{
+            test: /\.(re|ml)$/,
+            use: {
+                loader: "bs-loader",
+                options: {
+                    cwd: __dirname
                 }
-            },
-        ]
+            }
+        }]
     },
 
     resolve: {
@@ -46,7 +44,7 @@ module.exports = {
         {
             apply: (compiler) => {
                 compiler.plugin("invalid", (fileName) => {
-                    console.log("File changed: " + fileName);//path.relative(rel(".."), fileName));
+                    console.log("File changed: " + path.relative(rel(".."), fileName));
                 });
             }
         }
