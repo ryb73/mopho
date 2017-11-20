@@ -2,13 +2,15 @@ const path              = require("path"),
       CopyWebpackPlugin = require("copy-webpack-plugin"),
       fs                = require("fs"),
       webpack           = require("webpack"),
-      config            = require("config");
+      configModule      = require("config");
 
 function rel(relPath) {
     return path.resolve(__dirname, "../" + relPath)
 }
 
-fs.writeFileSync(rel("config/config-out.json", JSON.stringify(config));
+const config = configModule.util.loadFileConfigs(rel("config/"));
+
+fs.writeFileSync(rel("config/config-out.json"), JSON.stringify(config));
 
 module.exports = {
     name: "frame-bs",
@@ -41,7 +43,7 @@ module.exports = {
     resolve: {
         extensions: ['.re', '.ml', '.js'],
         alias: {
-            config: rel("config/config-out.json")
+            config: rel("config/config-adapter")
         }
     },
 
@@ -76,7 +78,7 @@ module.exports = {
         }
     ],
 
-    devtool: "source-map",
+    // devtool: "source-map",
 };
 
 function getSymlinkedDirs(nodeModulesPath) {

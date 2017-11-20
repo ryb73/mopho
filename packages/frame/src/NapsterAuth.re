@@ -1,6 +1,7 @@
 open Js.Promise;
 open PromiseEx;
 open ReDomSuite;
+open FrameConfig;
 
 module QsParser = Qs.MakeParser({
     type t = {.
@@ -9,14 +10,8 @@ module QsParser = Qs.MakeParser({
     } [@@noserialize];
 });
 
-let apiKey = "MDk5MmZmNDUtNTA1ZC00NmNiLWE4YTUtODNiNmVmNWVkMWZl";
-let hostname = "www.mopho.local";
-let apiUrl = "//api.mopho.local";
-
-module NapsterApi = NapsterApi.Make({ let apiKey = apiKey; });
-
 let napsterReady = make @@ fun ::resolve reject::_ => {
-    Napster.init apiKey "v2.2";
+    Napster.init config.napsterApiKey "v2.2";
     Napster.on Ready (fun d => {
         Js.log2 "ready!" d;
         let u = ();
@@ -26,7 +21,7 @@ let napsterReady = make @@ fun ::resolve reject::_ => {
 
 let getAuthUrl apiState => {
     let redirectUri = Location.href ReDom.location;
-    "https://api.napster.com/oauth/authorize?client_id=" ^ apiKey ^
+    "https://api.napster.com/oauth/authorize?client_id=" ^ (config.napsterApiKey) ^
         "&redirect_uri=" ^ redirectUri ^ "&response_type=code" ^
         "&state=" ^ apiState;
 };
@@ -37,7 +32,7 @@ let doAuth authState => {
 };
 
 let beginAuth () => {
-    Apis.GenerateState.request apiUrl ()
+    Apis.GenerateState.request config.apiUrl ()
         |> map (fun result => {
             switch result {
                 | `Success state => doAuth state
@@ -53,7 +48,7 @@ let sendCode mophoCode => {
 
 let getMophoCode code state => {
     let reqData = { Apis.NapsterAuth_impl.code, state };
-    Apis.NapsterAuth.request apiUrl reqData
+    Apis.NapsterAuth.request config.apiUrl reqData
         |> map (fun result => {
             switch result {
                 | `Success { Apis.NapsterAuth_impl.mophoCode  } => sendCode mophoCode

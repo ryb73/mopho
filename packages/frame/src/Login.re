@@ -1,6 +1,7 @@
 open ReDomSuite;
 open Option;
 open Option.Infix;
+open FrameConfig;
 
 let flip = BatPervasives.flip;
 let s2e = ReasonReact.stringToElement;
@@ -33,7 +34,7 @@ let renderLoginOptions { ReasonReact.reduce } =>
 let go reduce action => reduce (fun _ => action) ();
 
 let loginWithCode code => {
-    Apis.ExchangeAuthCode.request;
+    Apis.ExchangeAuthCode.request config.apiUrl;
 };
 
 let iFrameMounted element /* { ReasonReact.reduce } */ _ => {
