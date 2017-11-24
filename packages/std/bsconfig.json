@@ -3,7 +3,8 @@
     "bs-dependencies": [
         "bs-base64url",
         "bs-node",
-        "bs-scrypt"
+        "bs-scrypt",
+        "bs-promise-ex"
     ],
     "sources" : [
         { "dir" : "src" },

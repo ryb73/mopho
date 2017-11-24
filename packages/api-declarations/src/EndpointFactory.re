@@ -1,7 +1,8 @@
 open Express;
-open Option;
 open Js.Promise;
 open Js.Result;
+open Option.Infix;
+open PromiseEx;
 
 let flip = BatPervasives.flip;
 
@@ -18,8 +19,7 @@ module type Definition = {
 };
 
 let returnCode code resp => Response.status resp code
-    |> Response.end_
-    |> resolve;
+    |> Response.end_;
 
 module Endpoint = fun (Definition : Definition) => {
     let _tryOpt f v => {
@@ -28,7 +28,7 @@ module Endpoint = fun (Definition : Definition) => {
         };
     };
 
-    let parseGetReq req => {
+    let _parseGetReq req => {
         req
             |> Request.query
             |> flip Js.Dict.get "json" |? Js.Json.null
@@ -37,7 +37,7 @@ module Endpoint = fun (Definition : Definition) => {
             |> Definition.req__from_json;
     };
 
-    let parsePostReq req => {
+    let _parsePostReq req => {
         req
             |> Request.asJsonObject
             |> flip Js.Dict.get "body" |? Js.Json.null
@@ -52,28 +52,27 @@ module Endpoint = fun (Definition : Definition) => {
 
     let handle app callback => {
         let (methodFunc, reqParser) = switch Definition.reqMethod {
-            | Get => (App.get, parseGetReq)
-            | Post => (App.post, parsePostReq)
+            | Get => (App.get, _parseGetReq)
+            | Post => (App.post, _parsePostReq)
         };
 
         methodFunc app path::Definition.path @@ Middleware.fromAsync (fun req resp next => {
             switch (reqParser req) {
-                | Error _ => returnCode 400 resp
+                | Error _ => resolve @@ returnCode 400 resp
                 | Ok data =>
                     callback req resp next data
-                        |> then_ (fun result => {
+                        |> map (fun result => {
                             switch result {
-                                | ExpressAction a => resolve a
+                                | ExpressAction a => a
                                 | ErrorCode code => returnCode code resp
                                 | Result r =>
                                     Definition.resp__to_json r
                                         |> Response.sendJson resp
-                                        |> resolve
                             };
                         })
                         |> catch (fun err => {
                             Js.log2 ("Error in " ^ Definition.path ^ ":") err;
-                            returnCode 500 resp;
+                            resolve @@ returnCode 500 resp;
                         });
             };
         });

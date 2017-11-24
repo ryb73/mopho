@@ -1,11 +1,14 @@
 open Express;
 open Js.Promise;
 open PromiseEx;
+open MomentRe;
 
 let flip = BatPervasives.flip;
 let config = ConfigLoader.config;
 
 module NapsterApi = NapsterApi.Make({ let apiKey = config.napster.apiKey });
+
+let tokenCookie = "auth_token";
 
 let app = App.make ();
 
@@ -90,11 +93,13 @@ type napsterApiAccessToken = {
     expires_in: int
 };
 
+let getIp req => Request.ip req;
+
 let () = {
     open Apis.NapsterAuth;
 
     let loginWithToken req tokenBody => {
-        Js.log2 "ip:" (Request.ip req);
+        Js.log2 "ip:" (getIp req);
 
         switch tokenBody {
             | `Success body =>
@@ -102,7 +107,7 @@ let () = {
                     |> map (fun {  NapsterApi.me } => me)
                     |> then_ getUserIdFromNapsterMember
                     |> then_ @@ saveNapsterTokens req body.access_token body.refresh_token
-                    |> then_ @@ Db.User.generateAuthCode (Request.ip req);
+                    |> then_ @@ Db.User.generateAuthCode (getIp req);
             | _ => {
                 Js.log tokenBody;
                 failwith "Couldn't get access token";
@@ -145,5 +150,26 @@ let () = {
         };
     });
 };
+
+Apis.LogInWithCode.handle app (fun req resp _ code => {
+    Db.User.useCode (getIp req) code
+        |> map (fun token => {
+            let expires = momentUtc ()
+                |> Moment.add duration::(duration 55 `years)
+                |> MomentRe.Moment.toDate;
+
+            let opts = Response.cookieOpts ::expires httpOnly::true
+                secure::config.secure sameSite::"lax" ();
+
+            Response.setCookie resp tokenCookie token ::opts ();
+
+            Apis.LogInWithCode.Result ();
+        });
+});
+
+Apis.GetMyUserData.handle app (fun _ _  _ _ userId => {
+    Js.log userId;
+    Apis.GetMyUserData.ErrorCode 500;
+});
 
 App.listen app onListen::(fun _ => Js.log "listening") ();

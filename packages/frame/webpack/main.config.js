@@ -1,3 +1,5 @@
+process.env.SUPPRESS_NO_CONFIG_WARNING = true;
+
 const path              = require("path"),
       CopyWebpackPlugin = require("copy-webpack-plugin"),
       fs                = require("fs"),

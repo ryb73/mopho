@@ -1,32 +1,37 @@
-type state = {
-    isAuthenticated: bool
-} [@@noserialize];
+let s2e =  ReasonReact.stringToElement;
+
+type state =
+    | Initializing
+    | LoggedOut
+    | LoggedIn
+[@@noserialize];
 
 type action =
-  | SetAuthenticated [@@noserialize];
+  | SetLoggedIn
+[@@noserialize];
 
 let component = ReasonReact.reducerComponent "Root";
 
 let make _ => {
     ...component,
 
-    render: fun { state } => {
-        let content = if(state.isAuthenticated) {
-            <Foundation />;
-        } else {
-            <Login />;
+    render: fun self => {
+        let { ReasonReact.state, reduce } = self;
+
+        let content = switch state {
+            | Initializing => <span>(s2e "Initializing")</span>
+            | LoggedOut => <Login onLoggedIn={reduce (fun _ => SetLoggedIn)} />
+            | LoggedIn => <Foundation />
         };
 
         <div className="root">(content)</div>
     },
 
-    initialState: fun () => {
-        isAuthenticated: false
-    },
+    initialState: fun () => LoggedOut,
 
     reducer: fun action _ => {
         switch action {
-            | SetAuthenticated => ReasonReact.Update { isAuthenticated: true }
+            | SetLoggedIn => ReasonReact.Update LoggedIn
         };
     }
 };

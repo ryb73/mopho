@@ -2,6 +2,9 @@ open ReDomSuite;
 open Option;
 open Option.Infix;
 open FrameConfig;
+open Js.Promise;
+
+let mapP = PromiseEx.map;
 
 let flip = BatPervasives.flip;
 let s2e = ReasonReact.stringToElement;
@@ -31,13 +34,18 @@ let renderLoginOptions { ReasonReact.reduce } =>
         </ul>
     </div>;
 
-let go reduce action => reduce (fun _ => action) ();
-
-let loginWithCode code => {
-    Apis.ExchangeAuthCode.request config.apiUrl;
+let loginWithCode onLoggedIn code => {
+    Apis.LogInWithCode.request config.apiUrl code
+        |> mapP (fun _ => {
+            onLoggedIn ();
+        })
+        |> catch (fun exn => {
+            Js.log2 "Error logging in" exn;
+            resolve ();
+        });
 };
 
-let iFrameMounted element /* { ReasonReact.reduce } */ _ => {
+let iFrameMounted onLoggedIn element _ => {
     element
         |> Js.Null.to_opt
         |> map Element.make
@@ -46,24 +54,26 @@ let iFrameMounted element /* { ReasonReact.reduce } */ _ => {
         |> map @@
             IFrameComm.listen "http://www.mopho.local" (fun message => {
                 switch message {
-                    | LoggedIn code => Js.log2 "logged in!!" code;
+                    | LoggedIn code => loginWithCode onLoggedIn code;
                 };
+
+                ();
             });
 
     ();
 };
 
-let renderAuthIFrame { ReasonReact.handle } =>
-    <iframe src="napster-auth.html" ref={handle iFrameMounted} />;
+let renderAuthIFrame { ReasonReact.handle } onLoggedIn =>
+    <iframe src="napster-auth.html" ref={handle (iFrameMounted onLoggedIn)} />;
 
-let make _ => {
+let make ::onLoggedIn _ => {
     ...component,
 
     render: fun self => {
         let { ReasonReact.state } = self;
 
         let content = switch(state) {
-            | InAuthFlow => renderAuthIFrame self
+            | InAuthFlow => renderAuthIFrame self onLoggedIn
             | Options => renderLoginOptions self
             | ErrorOccurred => s2e "Error"
         };

@@ -10,7 +10,7 @@ module.exports = {
     name: "iframe-comm",
 
     entry: {
-        IframeComm: rel("src/IframeComm.re"),
+        IFrameComm: rel("src/IFrameComm.re"),
     },
 
     output: {

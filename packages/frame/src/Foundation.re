@@ -1,8 +1,9 @@
 let s2e = ReasonReact.stringToElement;
 
-type state = {
-    error: bool
-} [@@noserialize];
+type state =
+  | Initializing
+  | Loaded
+[@@noserialize];
 
 type action =
   | Error [@@noserialize];
@@ -13,10 +14,14 @@ Napster.on Error (fun error => {
     Js.log2 "Error:" error;
 });
 
+let doInitialLoad () => {};
+
 let make _ => {
     ...component,
 
     render: fun _ => {
+        doInitialLoad ();
+
         <div className="foundation">
             <div className="top-bar">
                 <input _type="text" placeholder="Search" />

@@ -4,7 +4,8 @@
         "bs-express",
         "bs-batteries",
         "bs-superagent",
-        "mopho-rest-helper"
+        "mopho-rest-helper",
+        "bs-promise-ex"
     ],
     "sources" : [
         { "dir" : "src" },

@@ -14,7 +14,8 @@
         "bs-napster-api",
         "mopho-db",
         "bs-promise-ex",
-        "mopho-std"
+        "mopho-std",
+        "bs-moment"
     ],
     "sources" : [
         { "dir" : "src" },

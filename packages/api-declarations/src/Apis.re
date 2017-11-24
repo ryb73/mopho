@@ -24,12 +24,23 @@ module NapsterAuth_impl = {
 
 module NapsterAuth = Endpoint(NapsterAuth_impl);
 
-module ExchangeAuthCode_impl = {
+module LogInWithCode = Endpoint({
     type req = string;
-    type resp = { authToken: string };
+    type resp = unit;
 
-    let path = "/exchange-auth-code/";
+    let path = "/login-with-code/";
     let reqMethod = Post;
+});
+
+module GetMyUserData_impl = {
+    type req = unit;
+    type resp = {
+        id: int,
+        name: string
+    };
+
+    let path = "/get-my-user-data/";
+    let reqMethod = Get;
 };
 
-module ExchangeAuthCode = Endpoint(ExchangeAuthCode_impl);
+module GetMyUserData = Endpoint(GetMyUserData_impl);

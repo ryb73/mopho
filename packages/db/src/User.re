@@ -69,7 +69,7 @@ let getFromNapsterId (napsterId : string) => {
         });
 };
 
-let testAffectedRows ::expected=1 (result, _) => {
+let _testAffectedRows ::expected=1 (result, _) => {
     let affectedRows = Js.Json.decodeObject result
         >>= flip Js.Dict.get "affectedRows"
         >>= Js.Json.decodeNumber;
@@ -95,29 +95,85 @@ let setNapsterRefreshToken (userId : int) (refreshToken : string) => {
         |> toString;
 
     Mysql.Queryable.query pool query
-        |> map testAffectedRows;
+        |> map _testAffectedRows;
 };
+
+let _generateAndHash salt => {
+    Std.generateRandomBase64 ()
+        |> then_ (fun code => {
+            Std.secureHash salt code
+                |> map @@ fun hash => (code, hash);
+        });
+};
+
+let getCurrentUtc () => momentUtc ()
+    |> Moment.defaultFormat;
 
 let generateAuthCode salt (userId : int) => {
     open Insert;
 
-    Std.generateRandomBase64 ()
-        |> then_ (fun code => {
-            Std.secureHash salt code
-                |> then_ (fun buf => {
-                    let currentUtc = momentUtc ()
-                        |> Moment.defaultFormat;
+    _generateAndHash salt
+        |> then_ (fun (code, hash) => {
+            let query = Insert.make ()
+                |> into "auth_codes"
+                |> set "userId" userId
+                |> set "authCodeHash" hash
+                |> set "createdUtc" (getCurrentUtc ())
+                |> toString;
 
-                    let query = Insert.make ()
-                        |> into "auth_codes"
-                        |> set "userId" userId
-                        |> set "authCodeHash" (Base64Url.fromBuffer buf)
-                        |> set "createdUtc" currentUtc
-                        |> toString;
-
-                    Mysql.Queryable.query pool query
-                })
-                |> map testAffectedRows
+            Mysql.Queryable.query pool query
                 |> thenResolve code;
         });
+};
+
+let _deleteHash (hash : string) => {
+    open Delete;
+
+    let query = Delete.make ()
+        |> from "auth_codes"
+        |> where ("authCodeHash = ?" |?. hash)
+        |> toString;
+
+    Mysql.Queryable.query pool query;
+};
+
+let _createAuthToken salt (userId : int) => {
+    open Insert;
+
+    _generateAndHash salt
+        |> then_ (fun (token, hash) => {
+            let query = Insert.make ()
+                |> into "auth_tokens"
+                |> set "userId" userId
+                |> set "tokenHash" hash
+                |> set "createdUtc" (getCurrentUtc ())
+                |> toString;
+
+            Mysql.Queryable.query pool query
+                |> tap _testAffectedRows
+                |> thenResolve token;
+        });
+};
+
+let useCode salt (code : string) => {
+    Std.secureHash salt code
+        |> then_ (fun hash => {
+            open Select;
+
+            let query = Select.make ()
+                |> from "auth_codes"
+                |> field "userId"
+                |> where ("authCodeHash = ?" |?. hash)
+                |> toString;
+
+            Mysql.Queryable.query pool query
+                |> map (fun (result, _) => {
+                    switch (userIdSelectResult__from_json result) {
+                        | Error _ => failwith "Invalid code"
+                        | Ok result => (result.(0).userId, hash)
+                    };
+                });
+        })
+        |> tap (fun (_, hash) => _deleteHash hash)
+        |> then_ (fun (userId, _) => _createAuthToken salt userId);
 };
