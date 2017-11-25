@@ -1,5 +1,6 @@
 open Js.Promise;
 open Js.Result;
+open ResultEx;
 open PromiseEx;
 open Squel;
 open Params.Infix;
@@ -7,8 +8,11 @@ open Option.Infix;
 open MomentRe;
 
 let flip = BatPervasives.flip;
+let map = PromiseEx.map;
 
 let pool = DbPool.pool;
+
+let doQuery query => Mysql.Queryable.query pool query;
 
 let setNapsterId (userId : int) (napsterId : string) => {
     open Insert;
@@ -19,7 +23,7 @@ let setNapsterId (userId : int) (napsterId : string) => {
         |> set "napsterUserId" napsterId
         |> toString;
 
-    Mysql.Queryable.query pool query
+    doQuery query
         |> map (fun _ => ());
 };
 
@@ -35,7 +39,7 @@ let create (name : string) => {
         |> set "name" name
         |> toString;
 
-    Mysql.Queryable.query pool query
+    doQuery query
         |> then_ (fun (result, _) => {
             switch (insertResult__from_json result) {
                 | Error _ => failwith "Error converting insert result"
@@ -56,7 +60,7 @@ let getFromNapsterId (napsterId : string) => {
         |> where ("napsterUserId = ?" |?. napsterId)
         |> toString;
 
-     Mysql.Queryable.query pool query
+     doQuery query
         |> map (fun (result, _) => {
             switch (userIdSelectResult__from_json result) {
                 | Error _ => failwith "Error converting select result"
@@ -94,7 +98,7 @@ let setNapsterRefreshToken (userId : int) (refreshToken : string) => {
         |> where ("userId = ?" |?. userId)
         |> toString;
 
-    Mysql.Queryable.query pool query
+    doQuery query
         |> map _testAffectedRows;
 };
 
@@ -121,7 +125,7 @@ let generateAuthCode salt (userId : int) => {
                 |> set "createdUtc" (getCurrentUtc ())
                 |> toString;
 
-            Mysql.Queryable.query pool query
+            doQuery query
                 |> thenResolve code;
         });
 };
@@ -134,7 +138,7 @@ let _deleteHash (hash : string) => {
         |> where ("authCodeHash = ?" |?. hash)
         |> toString;
 
-    Mysql.Queryable.query pool query;
+    doQuery query;
 };
 
 let _createAuthToken salt (userId : int) => {
@@ -142,14 +146,13 @@ let _createAuthToken salt (userId : int) => {
 
     _generateAndHash salt
         |> then_ (fun (token, hash) => {
-            let query = Insert.make ()
+            Insert.make ()
                 |> into "auth_tokens"
                 |> set "userId" userId
                 |> set "tokenHash" hash
                 |> set "createdUtc" (getCurrentUtc ())
-                |> toString;
-
-            Mysql.Queryable.query pool query
+                |> toString
+                |> doQuery
                 |> tap _testAffectedRows
                 |> thenResolve token;
         });
@@ -160,13 +163,12 @@ let useCode salt (code : string) => {
         |> then_ (fun hash => {
             open Select;
 
-            let query = Select.make ()
+            Select.make ()
                 |> from "auth_codes"
                 |> field "userId"
                 |> where ("authCodeHash = ?" |?. hash)
-                |> toString;
-
-            Mysql.Queryable.query pool query
+                |> toString
+                |> doQuery
                 |> map (fun (result, _) => {
                     switch (userIdSelectResult__from_json result) {
                         | Error _ => failwith "Invalid code"
@@ -176,4 +178,27 @@ let useCode salt (code : string) => {
         })
         |> tap (fun (_, hash) => _deleteHash hash)
         |> then_ (fun (userId, _) => _createAuthToken salt userId);
+};
+
+type t = {
+    id: int,
+    name: string
+};
+type userArray = array t;
+let getUserFromToken salt (token : string) => {
+    Std.secureHash salt token
+        |> map (fun hash => {
+            open Select;
+
+            Select.make ()
+                |> from alias::"at" "auth_tokens"
+                |> join "users" alias::"u" "u.id = at.id"
+                |> field "u.*"
+                |> where ("at.tokenHash = ?" |?. hash)
+                |> toString;
+        })
+        |> then_ doQuery
+        |> map (fun (result, _) => userArray__from_json result)
+        |> map toOpt
+        |> map (flip Option.bind Js.Array.pop);
 };

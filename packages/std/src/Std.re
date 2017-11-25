@@ -1,5 +1,6 @@
 open NodeEx;
 open PromiseEx;
+open Express;
 
 exception JsException Js.Exn.t;
 
@@ -19,3 +20,5 @@ let secureHash salt key => {
     Scrypt.hash key _scryptParams 64 salt
         |> map Base64Url.fromBuffer;
 };
+
+let getIp req => Request.ip req;

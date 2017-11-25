@@ -5,10 +5,15 @@
         "bs-batteries",
         "bs-superagent",
         "mopho-rest-helper",
-        "bs-promise-ex"
+        "bs-promise-ex",
+        "mopho-db",
+        "mopho-std"
     ],
     "sources" : [
-        { "dir" : "src" },
+        {
+            "dir" : "src",
+            "subdirs": true
+        },
         {
             "dir": "test",
             "type": "dev"

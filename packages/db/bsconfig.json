@@ -8,7 +8,8 @@
         "mopho-std",
         "bs-base64url",
         "bs-batteries",
-        "bs-moment"
+        "bs-moment",
+        "bs-result-ex"
     ],
     "sources" : [
         {

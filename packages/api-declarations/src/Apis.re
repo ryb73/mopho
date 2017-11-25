@@ -8,6 +8,8 @@ module GenerateState = Endpoint({
     let reqMethod = Post;
 });
 
+let generateState = GenerateState.make ();
+
 module NapsterAuth_impl = {
     type req = {
         code: string,
@@ -23,6 +25,7 @@ module NapsterAuth_impl = {
 };
 
 module NapsterAuth = Endpoint(NapsterAuth_impl);
+let napsterAuth = NapsterAuth.make ();
 
 module LogInWithCode = Endpoint({
     type req = string;
@@ -34,13 +37,20 @@ module LogInWithCode = Endpoint({
 
 module GetMyUserData_impl = {
     type req = unit;
-    type resp = {
-        id: int,
-        name: string
-    };
+    type resp = Db.User.t;
 
     let path = "/get-my-user-data/";
     let reqMethod = Get;
 };
 
 module GetMyUserData = Endpoint(GetMyUserData_impl);
+let getMyUserData = GetMyUserData.make ()
+    |> (fun (handle, request) => {
+        let newHandle app callback => {
+            handle app (fun req resp next reqArgs => {
+                callback req resp next reqArgs 42;
+            });
+        };
+
+        (newHandle, request);
+    });

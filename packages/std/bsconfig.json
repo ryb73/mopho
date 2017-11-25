@@ -4,7 +4,8 @@
         "bs-base64url",
         "bs-node",
         "bs-scrypt",
-        "bs-promise-ex"
+        "bs-promise-ex",
+        "bs-express"
     ],
     "sources" : [
         { "dir" : "src" },

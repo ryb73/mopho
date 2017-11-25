@@ -1,3 +1,4 @@
+open Std;
 open Express;
 open Js.Promise;
 open PromiseEx;
@@ -7,8 +8,6 @@ let flip = BatPervasives.flip;
 let config = ConfigLoader.config;
 
 module NapsterApi = NapsterApi.Make({ let apiKey = config.napster.apiKey });
-
-let tokenCookie = "auth_token";
 
 let app = App.make ();
 
@@ -92,8 +91,6 @@ type napsterApiAccessToken = {
     refresh_token: string,
     expires_in: int
 };
-
-let getIp req => Request.ip req;
 
 let () = {
     open Apis.NapsterAuth;

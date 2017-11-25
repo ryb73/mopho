@@ -50,7 +50,7 @@ module Endpoint = fun (Definition : Definition) => {
       | ExpressAction done_
       [@@noserialize];
 
-    let handle app callback => {
+    let _handle app callback => {
         let (methodFunc, reqParser) = switch Definition.reqMethod {
             | Get => (App.get, _parseGetReq)
             | Post => (App.post, _parsePostReq)
@@ -78,7 +78,7 @@ module Endpoint = fun (Definition : Definition) => {
         });
     };
 
-    let queryJson json req => {
+    let _queryJson json req => {
         let encoded = Js.Json.stringify json;
         let dict = Js.Dict.fromList [("json", encoded)];
         Superagent.Get.query dict req;
@@ -88,7 +88,7 @@ module Endpoint = fun (Definition : Definition) => {
         apiUrl
             |> Superagent.get
             |> Superagent.Get.withCredentials
-            |> queryJson @@ Definition.req__to_json data
+            |> _queryJson @@ Definition.req__to_json data
             |> Superagent.Get.end_
             |> then_ @@ Rest.parseResponse Definition.resp__from_json;
     };
@@ -102,7 +102,7 @@ module Endpoint = fun (Definition : Definition) => {
             |> then_ @@ Rest.parseResponse Definition.resp__from_json;
     };
 
-    let request apiUrlBase data => {
+    let _request apiUrlBase data => {
         let reqMethod = switch Definition.reqMethod {
             | Post => _doPost
             | Get => _doGet
@@ -110,4 +110,6 @@ module Endpoint = fun (Definition : Definition) => {
 
         reqMethod (apiUrlBase ^ Definition.path) data
     };
+
+    let make () => (_handle, _request);
 };
