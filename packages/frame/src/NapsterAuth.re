@@ -33,12 +33,7 @@ let doAuth authState => {
 
 let beginAuth () => {
     Apis.GenerateState.request config.apiUrl ()
-        |> map (fun result => {
-            switch result {
-                | `Success state => doAuth state
-                | _ => Js.log2 "Error:" result
-            };
-        });
+        |> map doAuth;
 };
 
 let sendCode mophoCode => {
@@ -49,12 +44,7 @@ let sendCode mophoCode => {
 let getMophoCode code state => {
     let reqData = { Apis.NapsterAuth_impl.code, state };
     Apis.NapsterAuth.request config.apiUrl reqData
-        |> map (fun result => {
-            switch result {
-                | `Success { Apis.NapsterAuth_impl.mophoCode  } => sendCode mophoCode
-                | _ => Js.log2 "Error:" result
-            };
-        });
+        |> map (fun { Apis.NapsterAuth_impl.mophoCode } => sendCode mophoCode);
 };
 
 let qs = ReDom.location

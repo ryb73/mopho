@@ -180,11 +180,7 @@ let useCode salt (code : string) => {
         |> then_ (fun (userId, _) => _createAuthToken salt userId);
 };
 
-type t = {
-    id: int,
-    name: string
-};
-type userArray = array t;
+type userArray = array Models.User.t;
 let getUserFromToken salt (token : string) => {
     Std.secureHash salt token
         |> map (fun hash => {
@@ -192,7 +188,7 @@ let getUserFromToken salt (token : string) => {
 
             Select.make ()
                 |> from alias::"at" "auth_tokens"
-                |> join "users" alias::"u" "u.id = at.id"
+                |> join alias::"u" "users" "u.id = at.userId"
                 |> field "u.*"
                 |> where ("at.tokenHash = ?" |?. hash)
                 |> toString;

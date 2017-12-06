@@ -1,18 +1,19 @@
-open Js.Promise;
 open Js.Result;
+open ResultEx;
+
+exception RestError (option string);
 
 let parseResponse bodyParser result => {
-    resolve @@ switch result {
-        | Error err => `NoResponse err
-        | Ok resp => switch (Falsy.to_opt resp##error) {
-            | Some error => `Error error
-            | None => switch (Js.Nullable.to_opt resp##body) {
-                | None => `NoBody
-                | Some body => switch (bodyParser body) {
-                    | Error optKey => `InvalidBody (body, optKey)
-                    | Ok parsedBody => `Success parsedBody
+    result
+        |> mapError Option.some
+        |> bind (fun resp =>
+            switch (Falsy.to_opt resp##error) {
+                | Some error => Error (Js.Json.stringifyAny error);
+                | None => switch (Js.Nullable.to_opt resp##body) {
+                    | None => Error None
+                    | Some body => Ok body
                 }
             }
-        }
-    };
+        )
+        |> bind bodyParser;
 };

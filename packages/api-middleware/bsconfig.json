@@ -1,0 +1,22 @@
+{
+    "name": "mopho-api-middleware",
+    "bs-dependencies": [
+        "mopho-api-declarations",
+        "bs-promise-ex",
+        "bs-batteries",
+        "bs-express",
+        "mopho-db",
+        "mopho-std"
+    ],
+    "sources" : [
+        {
+            "dir": "src",
+            "public": [ "Middleware" ]
+        },
+        {
+            "dir": "test",
+            "type": "dev"
+        }
+    ],
+    "bsc-flags": [ "-w -10", "-bs-super-errors" ]
+}

@@ -9,7 +9,8 @@
         "bs-base64url",
         "bs-batteries",
         "bs-moment",
-        "bs-result-ex"
+        "bs-result-ex",
+        "mopho-models"
     ],
     "sources" : [
         {

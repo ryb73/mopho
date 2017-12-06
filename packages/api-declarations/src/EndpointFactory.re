@@ -21,7 +21,28 @@ module type Definition = {
 let returnCode code resp => Response.status resp code
     |> Response.end_;
 
+module type Endpoint = {
+    type resp;
+    type req;
+
+    type handlerResult =
+      | Result resp
+      | ErrorCode int
+      | ExpressAction done_
+      [@@noserialize];
+
+    let handle : App.t =>
+        (Request.t => Response.t => Middleware.next =>
+            req => Js.Promise.t handlerResult)
+        => unit;
+
+    let request : string => req => Js.Promise.t resp;
+};
+
 module Endpoint = fun (Definition : Definition) => {
+    type resp = Definition.resp;
+    type req = Definition.req;
+
     let _tryOpt f v => {
         try (Some (f v)) {
             | _ => None
@@ -50,7 +71,7 @@ module Endpoint = fun (Definition : Definition) => {
       | ExpressAction done_
       [@@noserialize];
 
-    let _handle app callback => {
+    let handle app callback => {
         let (methodFunc, reqParser) = switch Definition.reqMethod {
             | Get => (App.get, _parseGetReq)
             | Post => (App.post, _parsePostReq)
@@ -89,8 +110,7 @@ module Endpoint = fun (Definition : Definition) => {
             |> Superagent.get
             |> Superagent.Get.withCredentials
             |> _queryJson @@ Definition.req__to_json data
-            |> Superagent.Get.end_
-            |> then_ @@ Rest.parseResponse Definition.resp__from_json;
+            |> Superagent.Get.end_;
     };
 
     let _doPost apiUrl data => {
@@ -98,18 +118,17 @@ module Endpoint = fun (Definition : Definition) => {
             |> Superagent.post
             |> Superagent.Post.withCredentials
             |> Superagent.Post.send @@ Definition.req__to_json data
-            |> Superagent.Post.end_
-            |> then_ @@ Rest.parseResponse Definition.resp__from_json;
+            |> Superagent.Post.end_;
     };
 
-    let _request apiUrlBase data => {
+    let request apiUrlBase data => {
         let reqMethod = switch Definition.reqMethod {
             | Post => _doPost
             | Get => _doGet
         };
 
         reqMethod (apiUrlBase ^ Definition.path) data
+            |> map @@ Rest.parseResponse Definition.resp__from_json
+            |> unwrapResult;
     };
-
-    let make () => (_handle, _request);
 };

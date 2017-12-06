@@ -15,9 +15,9 @@ let generateRandomBase64 ()  => {
     };
 };
 
-let _scryptParams = Scrypt.paramsSync 0.5 ();
+let _scryptParams = lazy (Scrypt.paramsSync 0.5 ());
 let secureHash salt key => {
-    Scrypt.hash key _scryptParams 64 salt
+    Scrypt.hash key (Lazy.force _scryptParams) 64 salt
         |> map Base64Url.fromBuffer;
 };
 

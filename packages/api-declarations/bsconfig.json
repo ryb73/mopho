@@ -7,7 +7,8 @@
         "mopho-rest-helper",
         "bs-promise-ex",
         "mopho-db",
-        "mopho-std"
+        "mopho-std",
+        "mopho-models"
     ],
     "sources" : [
         {

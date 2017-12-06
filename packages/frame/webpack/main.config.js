@@ -1,10 +1,11 @@
 process.env.SUPPRESS_NO_CONFIG_WARNING = true;
 
-const path              = require("path"),
-      CopyWebpackPlugin = require("copy-webpack-plugin"),
-      fs                = require("fs"),
-      webpack           = require("webpack"),
-      configModule      = require("config");
+const path                  = require("path"),
+      CopyWebpackPlugin     = require("copy-webpack-plugin"),
+      fs                    = require("fs"),
+      webpack               = require("webpack"),
+      configModule          = require("config"),
+      ClosureCompilerPlugin = require("webpack-closure-compiler");
 
 function rel(relPath) {
     return path.resolve(__dirname, "../" + relPath)
@@ -45,7 +46,8 @@ module.exports = {
     resolve: {
         extensions: ['.re', '.ml', '.js'],
         alias: {
-            config: rel("config/config-adapter")
+            config: rel("config/config-adapter"),
+            scrypt: rel("dummy.js")
         }
     },
 
@@ -77,7 +79,15 @@ module.exports = {
                     console.log("File changed: " + path.relative(rel("../../"), fileName));
                 });
             }
-        }
+        },
+
+        // new ClosureCompilerPlugin({
+        //     compiler: {
+        //         jar: rel("node_modules/google-closure-compiler/compiler.jar"),
+        //         jscomp_off: ["suspiciousCode","nonStandardJsDocs"],
+        //         compilation_level: "SIMPLE"
+        //     }
+        // })
     ],
 
     // devtool: "source-map",

@@ -13,7 +13,8 @@
         "redom",
         "bs-batteries",
         "bs-promise-ex",
-        "bs-config"
+        "bs-config",
+        "mopho-models"
     ],
     "sources" : [
         { "dir" : "src" },

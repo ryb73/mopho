@@ -1,5 +1,5 @@
 {
-  "name": "mopho-db",
+  "name": "mopho-api-middleware",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -18,8 +18,9 @@
     "bs-platform": "^2.0.0"
   },
   "devDependencies": {
-    "webpack": "^3.8.1",
-    "mopho-models": "^1.0.0",
-    "mopho-std": "^1.0.0"
+    "mopho-api-declarations": "^1.0.0",
+    "mopho-db": "^1.0.0",
+    "mopho-std": "^1.0.0",
+    "webpack": "^3.8.1"
   }
 }

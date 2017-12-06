@@ -6,7 +6,6 @@ open Js.Promise;
 
 let mapP = PromiseEx.map;
 
-let flip = BatPervasives.flip;
 let s2e = ReasonReact.stringToElement;
 
 type state =

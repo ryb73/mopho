@@ -1,8 +1,11 @@
 open Std;
-open Express;
 open Js.Promise;
 open PromiseEx;
 open MomentRe;
+open Middleware;
+
+module App = Express.App;
+module Response = Express.Response;
 
 let flip = BatPervasives.flip;
 let config = ConfigLoader.config;
@@ -14,8 +17,10 @@ let app = App.make ();
 let corserOpts = Corser.opts origins::[| config.origin |] supportsCredentials::Js.true_ ();
 App.use app @@ Corser.express corserOpts;
 
-/* external bodyParserJson : unit => Middleware.t = "json" [@@bs.module "body-parser"];
-App.use app @@ bodyParserJson (); */
+App.use app @@ BodyParser.json strict::false ();
+
+external cookieParser : unit => Express.Middleware.t = "cookie-parser" [@@bs.module];
+App.use app @@ cookieParser ();
 
 type session = {
     state: option string,
@@ -95,21 +100,14 @@ type napsterApiAccessToken = {
 let () = {
     open Apis.NapsterAuth;
 
-    let loginWithToken req tokenBody => {
+    let loginWithToken req body => {
         Js.log2 "ip:" (getIp req);
 
-        switch tokenBody {
-            | `Success body =>
-                NapsterApi.me body.access_token
-                    |> map (fun {  NapsterApi.me } => me)
-                    |> then_ getUserIdFromNapsterMember
-                    |> then_ @@ saveNapsterTokens req body.access_token body.refresh_token
-                    |> then_ @@ Db.User.generateAuthCode (getIp req);
-            | _ => {
-                Js.log tokenBody;
-                failwith "Couldn't get access token";
-            }
-        };
+        NapsterApi.me body.access_token
+            |> map (fun {  NapsterApi.me } => me)
+            |> then_ getUserIdFromNapsterMember
+            |> then_ @@ saveNapsterTokens req body.access_token body.refresh_token
+            |> then_ @@ Db.User.generateAuthCode (getIp req);
     };
 
     let returnAuthCode authCode => {
@@ -130,7 +128,8 @@ let () = {
         Superagent.post "https://api.napster.com/oauth/access_token"
             |> Superagent.Post.send reqData
             |> Superagent.Post.end_
-            |> then_ @@ Rest.parseResponse napsterApiAccessToken__from_json
+            |> map @@ Rest.parseResponse napsterApiAccessToken__from_json
+            |> unwrapResult
             |> then_ @@ loginWithToken req
             |> map @@ returnAuthCode;
     };
@@ -158,15 +157,15 @@ Apis.LogInWithCode.handle app (fun req resp _ code => {
             let opts = Response.cookieOpts ::expires httpOnly::true
                 secure::config.secure sameSite::"lax" ();
 
-            Response.setCookie resp tokenCookie token ::opts ();
+            Response.setCookie resp Priveleged.authTokenCookie token ::opts ();
 
             Apis.LogInWithCode.Result ();
         });
 });
 
-Apis.GetMyUserData.handle app (fun _ _  _ _ userId => {
-    Js.log userId;
-    Apis.GetMyUserData.ErrorCode 500;
+module GetMyUserData = Priveleged.Make(Apis.GetMyUserData);
+GetMyUserData.handle app (fun _ _ _ _ user => {
+    GetMyUserData.Result user;
 });
 
 App.listen app onListen::(fun _ => Js.log "listening") ();

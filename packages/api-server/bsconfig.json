@@ -15,7 +15,9 @@
         "mopho-db",
         "bs-promise-ex",
         "mopho-std",
-        "bs-moment"
+        "bs-moment",
+        "mopho-api-middleware",
+        "bs-body-parser"
     ],
     "sources" : [
         { "dir" : "src" },
