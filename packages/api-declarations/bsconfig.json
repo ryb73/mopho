@@ -4,7 +4,7 @@
         "bs-express",
         "bs-batteries",
         "bs-superagent",
-        "mopho-rest-helper",
+        "mopho-resp-parser",
         "bs-promise-ex",
         "mopho-db",
         "mopho-std",

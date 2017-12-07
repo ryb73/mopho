@@ -128,7 +128,7 @@ module Endpoint = fun (Definition : Definition) => {
         };
 
         reqMethod (apiUrlBase ^ Definition.path) data
-            |> map @@ Rest.parseResponse Definition.resp__from_json
+            |> map @@ RespParser.parse Definition.resp__from_json
             |> unwrapResult;
     };
 };

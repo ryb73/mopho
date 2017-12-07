@@ -1,13 +1,14 @@
 {
-  "name": "mopho-rest-helper",
+  "name": "mopho-resp-parser",
   "version": "1.0.0",
-  "description": "Helper for REST requests using bs-superagent",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run clean && bsb -make-world",
     "watch": "npm run clean && bsb -make-world -w",
-    "clean": "rm -rf lib && bsb -clean-world"
+    "clean": "rm -rf lib && bsb -clean-world",
+    "postinstall": "ppl link-file"
   },
   "keywords": [],
   "license": "MIT",

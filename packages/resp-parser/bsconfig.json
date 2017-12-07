@@ -1,5 +1,5 @@
 {
-    "name" : "mopho-rest-helper",
+    "name" : "mopho-resp-parser",
     "bs-dependencies": [
         "bs-falsy",
         "bs-result-ex",

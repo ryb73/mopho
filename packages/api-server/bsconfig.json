@@ -5,7 +5,7 @@
         "bs-express-session",
         "bs-node",
         "bs-superagent",
-        "mopho-rest-helper",
+        "mopho-resp-parser",
         "bs-corser",
         "bs-batteries",
         "bs-base64url",

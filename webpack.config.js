@@ -7,7 +7,7 @@ function rel(relPath) {
 
 module.exports = [
     require("./packages/std/webpack.config"),
-    require("./packages/rest-helper/webpack.config"),
+    require("./packages/resp-parser/webpack.config"),
     require("./packages/models/webpack.config"),
     require("./packages/db/webpack.config"),
     require("./packages/api-declarations/webpack.config"),

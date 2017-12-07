@@ -2,7 +2,7 @@ open NodeEx;
 open PromiseEx;
 open Express;
 
-exception JsException Js.Exn.t;
+exception JsException exn;
 
 let generateRandomBase64 ()  => {
     Js.Promise.make @@ fun ::resolve ::reject => {

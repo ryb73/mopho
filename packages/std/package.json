@@ -16,5 +16,9 @@
   "repository": "git@github.com:ryb73/mopho.git",
   "peerDependencies": {
     "bs-platform": "^2.0.0"
+  },
+  "devDependencies": {
+    "scrypt": "^6.0.3",
+    "webpack": "^3.10.0"
   }
 }

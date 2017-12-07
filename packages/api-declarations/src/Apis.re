@@ -41,3 +41,11 @@ module GetMyUserData_impl = {
 };
 
 module GetMyUserData = Endpoint(GetMyUserData_impl);
+
+module LogOut = Endpoint({
+    type req = unit;
+    type resp = unit;
+
+    let path = "/log-out/";
+    let reqMethod = Post;
+});

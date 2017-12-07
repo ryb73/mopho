@@ -7,10 +7,10 @@ function rel(relPath) {
 }
 
 module.exports = {
-    name: "rest-helper",
+    name: "resp-parser",
 
     entry: {
-        index: rel("src/Rest.re"),
+        index: rel("src/RespParser.re"),
     },
 
     output: {

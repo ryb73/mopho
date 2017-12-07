@@ -3,7 +3,7 @@ open ResultEx;
 
 exception RestError (option string);
 
-let parseResponse bodyParser result => {
+let parse bodyParser result => {
     result
         |> mapError Option.some
         |> bind (fun resp =>

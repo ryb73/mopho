@@ -7,6 +7,8 @@ open Middleware;
 module App = Express.App;
 module Response = Express.Response;
 
+RespParser.parse;
+
 let flip = BatPervasives.flip;
 let config = ConfigLoader.config;
 
@@ -128,7 +130,7 @@ let () = {
         Superagent.post "https://api.napster.com/oauth/access_token"
             |> Superagent.Post.send reqData
             |> Superagent.Post.end_
-            |> map @@ Rest.parseResponse napsterApiAccessToken__from_json
+            |> map @@ RespParser.parse napsterApiAccessToken__from_json
             |> unwrapResult
             |> then_ @@ loginWithToken req
             |> map @@ returnAuthCode;
@@ -166,6 +168,12 @@ Apis.LogInWithCode.handle app (fun req resp _ code => {
 module GetMyUserData = Priveleged.Make(Apis.GetMyUserData);
 GetMyUserData.handle app (fun _ _ _ _ user => {
     GetMyUserData.Result user;
+});
+
+module LogOut = Priveleged.Make(Apis.LogOut);
+LogOut.handle app (fun _ resp _ _ _ => {
+    Response.clearCookie resp Priveleged.authTokenCookie;
+    LogOut.Result ();
 });
 
 App.listen app onListen::(fun _ => Js.log "listening") ();

@@ -7,7 +7,7 @@
         "bs-napster-api",
         "bs-napster-player",
         "bs-qs",
-        "mopho-rest-helper",
+        "mopho-resp-parser",
         "mopho-api-declarations",
         "mopho-iframe-comm",
         "redom",

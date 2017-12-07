@@ -20,7 +20,7 @@
   "devDependencies": {
     "mopho-db": "^1.0.0",
     "mopho-models": "^1.0.0",
-    "mopho-rest-helper": "^1.0.0",
+    "mopho-resp-parser": "^1.0.0",
     "mopho-std": "^1.0.0",
     "webpack": "^3.8.1"
   }
