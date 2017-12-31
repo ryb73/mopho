@@ -1,1 +1,1 @@
-ReactDOMRe.renderToElementWithId <Root /> "container";
+ReactDOMRe.renderToElementWithId(<Root />, "container");
