@@ -92,7 +92,8 @@ module Endpoint = fun (Definition : Definition) => {
                             };
                         })
                         |> catch (fun err => {
-                            Js.log2 ("Error in " ^ Definition.path ^ ":") err;
+                            Js.log ("Error in " ^ Definition.path ^ ":");
+                            Js.log err;
                             resolve @@ returnCode 500 resp;
                         });
             };
