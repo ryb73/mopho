@@ -1,3 +1,1 @@
-module User = {
-  include User;
-};
+module User = { include User; };
