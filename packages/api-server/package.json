@@ -19,6 +19,7 @@
     "bs-platform": "^2.0.0"
   },
   "devDependencies": {
+    "iron-node": "^3.0.20",
     "mopho-api-declarations": "^1.0.0",
     "mopho-api-middleware": "^1.0.0",
     "mopho-db": "^1.0.0",

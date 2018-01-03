@@ -74,7 +74,7 @@ let getUserIdFromNapsterMember = ({ NapsterApi.id, realName }) =>
                   }
 
                   | Some(userId) => resolve(userId)
-              };
+              }
           );
 
 let saveNapsterTokens = (req, accessToken, refreshToken, userId) =>
@@ -82,9 +82,9 @@ let saveNapsterTokens = (req, accessToken, refreshToken, userId) =>
         |> map(() => {
             let session = getSession(req);
             if (Session.set(req, { ...session, napsterAccessToken: Some(accessToken) })) {
-              userId;
+                userId;
             } else {
-              failwith("Error saving access token");
+                failwith("Error saving access token");
             };
         });
 
@@ -100,7 +100,7 @@ let () = {
     let loginWithToken = (req, body) => {
         Js.log2("ip:", getIp(req));
         NapsterApi.me(body.access_token)
-            |> map(({NapsterApi.me}) => me)
+            |> map(({ NapsterApi.me }) => me)
             |> then_(getUserIdFromNapsterMember)
             |> then_(saveNapsterTokens(req, body.access_token, body.refresh_token))
             |> then_(Db.User.generateAuthCode(getIp(req)));
@@ -111,11 +111,11 @@ let () = {
     let requestAccessTokens = (req, code) => {
         let reqData =
             Js.Dict.fromList([
-              ("client_id", config.napster.apiKey),
-              ("client_secret", config.napster.secret),
-              ("response_type", "code"),
-              ("grant_type", "authorization_code"),
-              ("code", code)
+                ("client_id", config.napster.apiKey),
+                ("client_secret", config.napster.secret),
+                ("response_type", "code"),
+                ("grant_type", "authorization_code"),
+                ("code", code)
             ])
             |> Js.Dict.map([@bs] ((s) => Js.Json.string(s)))
             |> Js.Json.object_;

@@ -22,8 +22,8 @@ module Priveleged = {
                     |> mapP(flatten)
                     |> mapP((optUser) =>
                         switch optUser {
-                          | None => ErrorCode(403)
-                          | Some(user) => callback(req, resp, next, data, user)
+                            | None => ErrorCode(403)
+                            | Some(user) => callback(req, resp, next, data, user)
                         }
                     );
             });

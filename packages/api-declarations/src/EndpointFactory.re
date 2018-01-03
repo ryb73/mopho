@@ -1,7 +1,7 @@
-open Express
-open Js.Promise
-open Js.Result
-open Option.Infix
+open Express;
+open Js.Promise;
+open Js.Result;
+open Option.Infix;
 open PromiseEx;
 
 let flip = BatPervasives.flip;
@@ -11,10 +11,10 @@ type allowedMethods =
     | Post;
 
 module type Definition = {
-  type req;
-  type resp;
-  let path: string;
-  let reqMethod: allowedMethods;
+    type req;
+    type resp;
+    let path: string;
+    let reqMethod: allowedMethods;
 };
 
 let returnCode = (code, resp) => Response.status(resp, code) |> Response.end_;
@@ -68,28 +68,26 @@ module Endpoint = (Definition: Definition) => {
                 | Post => (App.post, _parsePostReq)
             };
 
-        methodFunc(app, ~path=Definition.path,
-            Middleware.fromAsync((req, resp, next) =>
-                switch (reqParser(req)) {
-                    | Error(_) => resolve @@ returnCode(400, resp)
+        methodFunc(app, ~path=Definition.path, Middleware.fromAsync((req, resp, next) =>
+            switch (reqParser(req)) {
+                | Error(_) => resolve @@ returnCode(400, resp)
 
-                    | Ok(data) =>
-                        callback(req, resp, next, data)
-                            |> map((result) =>
-                                switch result {
-                                    | ExpressAction(a) => a
-                                    | ErrorCode(code) => returnCode(code, resp)
-                                    | Result(r) => Definition.resp__to_json(r) |> Response.sendJson(resp)
-                                }
-                            )
-                            |> catch((err) => {
-                                Js.log("Error in " ++ Definition.path ++ ":");
-                                Js.log(err);
-                                resolve @@ returnCode(500, resp)
-                            })
-                };
-          )
-        );
+                | Ok(data) =>
+                    callback(req, resp, next, data)
+                        |> map((result) =>
+                            switch result {
+                                | ExpressAction(a) => a
+                                | ErrorCode(code) => returnCode(code, resp)
+                                | Result(r) => Definition.resp__to_json(r) |> Response.sendJson(resp)
+                            }
+                        )
+                        |> catch((err) => {
+                            Js.log("Error in " ++ Definition.path ++ ":");
+                            Js.log(err);
+                            resolve @@ returnCode(500, resp)
+                        })
+            }
+        ));
     };
 
     let _queryJson = (json, req) => {

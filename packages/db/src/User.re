@@ -14,15 +14,15 @@ let pool = DbPool.pool;
 let doQuery = (query) => Mysql.Queryable.query(pool, query);
 
 let setNapsterId = (userId: int, napsterId: string) => {
-  open Insert;
+    open Insert;
 
-  Insert.make()
-      |> into("napster_users")
-      |> set("userId", userId)
-      |> set("napsterUserId", napsterId)
-      |> toString
-      |> doQuery
-      |> map((_) => ());
+    Insert.make()
+        |> into("napster_users")
+        |> set("userId", userId)
+        |> set("napsterUserId", napsterId)
+        |> toString
+        |> doQuery
+        |> map((_) => ());
 };
 
 type insertResult = { insertId: int };
@@ -53,18 +53,19 @@ let getFromNapsterId = (napsterId: string) => {
         |> from("napster_users")
         |> field("userId")
         |> where("napsterUserId = ?" |?. napsterId)
-        |> toString;
+        |> toString
         |> doQuery
         |> map(((result, _)) =>
-              switch (userIdSelectResult__from_json(result)) {
+            switch (userIdSelectResult__from_json(result)) {
                 | Error(_) => failwith("Error converting select result")
+
                 | Ok(results) =>
                     switch (Js.Array.length(results)) {
                         | 0 => None
                         | _ => Some(results[0].userId)
                     }
-              }
-          )
+            }
+        )
 };
 
 let _testAffectedRows = (~expected=1, (result, _)) => {
@@ -98,8 +99,8 @@ let setNapsterRefreshToken = (userId: int, refreshToken: string) => {
 let _generateAndHash = (salt) =>
     Std.generateRandomBase64()
         |> then_((code) =>
-          Std.secureHash(salt, code)
-            |> map((hash) => (code, hash))
+            Std.secureHash(salt, code)
+                |> map((hash) => (code, hash))
         );
 
 let getCurrentUtc = () => momentUtc() |> Moment.defaultFormat;
@@ -112,7 +113,7 @@ let generateAuthCode = (salt, userId: int) => Insert.(
                 |> set("userId", userId)
                 |> set("authCodeHash", hash)
                 |> set("createdUtc", getCurrentUtc())
-                |> toString;
+                |> toString
                 |> doQuery
                 |> thenResolve(code);
         })
@@ -130,17 +131,17 @@ let _deleteHash = (hash: string) => {
 
 let _createAuthToken = (salt, userId: int) => Insert.(
     _generateAndHash(salt)
-      |> then_(((token, hash)) =>
-          Insert.make()
-              |> into("auth_tokens")
-              |> set("userId", userId)
-              |> set("tokenHash", hash)
-              |> set("createdUtc", getCurrentUtc())
-              |> toString
-              |> doQuery
-              |> tap(_testAffectedRows)
-              |> thenResolve(token)
-      )
+        |> then_(((token, hash)) =>
+            Insert.make()
+                |> into("auth_tokens")
+                |> set("userId", userId)
+                |> set("tokenHash", hash)
+                |> set("createdUtc", getCurrentUtc())
+                |> toString
+                |> doQuery
+                |> tap(_testAffectedRows)
+                |> thenResolve(token)
+        )
 );
 
 let useCode = (salt, code: string) =>

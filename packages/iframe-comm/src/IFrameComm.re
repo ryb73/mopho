@@ -15,5 +15,5 @@ let listen = (fromOrigin, callback, fromWindow) =>
             };
         } else {
           ();
-        };
+        }
     );
