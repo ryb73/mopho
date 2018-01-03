@@ -1,11 +1,6 @@
-let component = ReasonReact.statelessComponent "MainPane";
+let component = ReasonReact.statelessComponent("MainPane");
 
-let make _ => {
+let make = (_) => {
     ...component,
-
-    render: fun _ => {
-        <div className="main-pane">
-            (ReasonReact.stringToElement "main panneeee")
-        </div>
-    }
+    render: (_) => <div className="main-pane"> (ReasonReact.stringToElement("main panneeee")) </div>
 };

@@ -2,54 +2,55 @@ open FrameConfig;
 open PromiseEx;
 open Js.Promise;
 
-let s2e =  ReasonReact.stringToElement;
+let s2e = ReasonReact.stringToElement;
 
+[@noserialize]
 type state =
     | Initializing
     | LoggedOut
-    | LoggedIn
-[@@noserialize];
+    | LoggedIn;
 
+[@noserialize]
 type action =
-  | SetLoggedIn
-  | SetLoggedOut
-[@@noserialize];
+    | SetLoggedIn
+    | SetLoggedOut;
 
-let component = ReasonReact.reducerComponent "Root";
+let component = ReasonReact.reducerComponent("Root");
 
-let go reduce action => reduce (fun _ => action) ();
+let go = (reduce, action) => reduce((_) => action, ());
 
-let checkLoggedIn { ReasonReact.reduce } => Apis.GetMyUserData.request config.apiUrl ()
-    |> map (fun _ => go reduce SetLoggedIn)
-    |> thenResolve ()
-    |> catch (fun exn => {
-        Js.log2 "doInitialLoad Error" exn;
-        resolve ();
-    });
+let checkLoggedIn = ({ ReasonReact.reduce }) =>
+    Apis.GetMyUserData.request(config.apiUrl, ())
+        |> map((_) => go(reduce, SetLoggedIn))
+        |> thenResolve()
+        |> catch((exn) => {
+            Js.log2("doInitialLoad Error", exn);
+            resolve()
+        });
 
-let make _ => {
+let make = (_) => {
     ...component,
 
-    render: fun self => {
+    render: (self) => {
         let { ReasonReact.state, reduce } = self;
 
         /* checkLoggedIn self; */
 
-        let content = switch state {
-            | Initializing => <span>(s2e "Initializing")</span>
-            | LoggedOut => <Login onLoggedIn={reduce (fun _ => SetLoggedIn)} />
-            | LoggedIn => <Foundation />
-        };
+        let content =
+            switch state {
+                | Initializing => <span> (s2e("Initializing")) </span>
+                | LoggedOut => <Login onLoggedIn=(reduce((_) => SetLoggedIn)) />
+                | LoggedIn => <Foundation />
+            };
 
-        <div className="root">(content)</div>
+        <div className="root"> content </div>
     },
 
-    initialState: fun () => LoggedOut /* Initializing */,
+    initialState: () => LoggedOut, /* Initializing */
 
-    reducer: fun action _ => {
+    reducer: (action, _) =>
         switch action {
-            | SetLoggedIn => ReasonReact.Update LoggedIn
-            | SetLoggedOut => ReasonReact.Update LoggedOut
-        };
-    }
+            | SetLoggedIn => ReasonReact.Update(LoggedIn)
+            | SetLoggedOut => ReasonReact.Update(LoggedOut)
+        }
 };

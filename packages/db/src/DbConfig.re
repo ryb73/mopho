@@ -4,7 +4,9 @@ type config = {
     password: string,
     database: string
 };
-let config = switch (Config.get "mopho-db" |> config__from_json) {
-    | Error _ => failwith "Error loading mopho-db config"
-    | Ok c => c
-};
+
+let config =
+    switch (config__from_json(Config.get("mopho-db"))) {
+        | Error(_) => failwith("Error loading mopho-db config")
+        | Ok(c) => c
+    };
