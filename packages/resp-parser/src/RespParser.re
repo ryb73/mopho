@@ -1,19 +1,14 @@
-open Js.Result;
-open ResultEx;
+open Superagent;
+open Option.Infix;
 
 exception RestError(option(string));
 
-let parse = (bodyParser, result) =>
-    result
-        |> mapError(Option.some)
-        |> bind((resp) =>
-            switch (Falsy.to_opt(resp##error)) {
-                | Some(error) => Error(Js.Json.stringifyAny(error))
-                | None =>
-                    switch (Js.Nullable.to_opt(resp##body)) {
-                        | None => Error(None)
-                        | Some(body) => Ok(body)
-                    }
+let parse = (bodyParser, resp) =>
+    switch (resp.error) {
+        | Some(error) => Js.Exn.raiseError(Js.Json.stringifyAny(error) |? "Unknown error")
+        | None =>
+            switch (resp.body) {
+                | None => Js.Exn.raiseError("No response body")
+                | Some(body) => bodyParser(body)
             }
-        )
-        |> bind(bodyParser);
+    };

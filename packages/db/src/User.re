@@ -37,7 +37,7 @@ let create = (name: string) => {
         |> doQuery
         |> then_(((result, _)) =>
             switch (insertResult__from_json(result)) {
-                | Error(_) => failwith("Error converting insert result")
+                | Error(_) => Js.Exn.raiseError("Error converting insert result")
                 | Ok({insertId}) => resolve(insertId)
             }
         );
@@ -57,7 +57,7 @@ let getFromNapsterId = (napsterId: string) => {
         |> doQuery
         |> map(((result, _)) =>
             switch (userIdSelectResult__from_json(result)) {
-                | Error(_) => failwith("Error converting select result")
+                | Error(_) => Js.Exn.raiseError("Error converting select result")
 
                 | Ok(results) =>
                     switch (Js.Array.length(results)) {
@@ -78,9 +78,9 @@ let _testAffectedRows = (~expected=1, (result, _)) => {
             if (Js.Math.floor(actual) === expected) {
                 ();
             } else {
-                failwith("Affected rows " ++ Js.String.make(actual) ++ " <> " ++ Js.String.make(expected));
+                Js.Exn.raiseError("Affected rows " ++ Js.String.make(actual) ++ " <> " ++ Js.String.make(expected));
             }
-        | _ => failwith("Affected rows empty")
+        | _ => Js.Exn.raiseError("Affected rows empty")
     };
 };
 
@@ -155,7 +155,7 @@ let useCode = (salt, code: string) =>
                 |> doQuery
                 |> map(((result, _)) =>
                     switch (userIdSelectResult__from_json(result)) {
-                        | Error(_) => failwith("Invalid code")
+                        | Error(_) => Js.Exn.raiseError("Invalid code")
                         | Ok(result) => (result[0].userId, hash)
                     }
                 )

@@ -1,7 +1,7 @@
 {
     "name" : "mopho-resp-parser",
     "bs-dependencies": [
-        "bs-falsy",
+        "bs-superagent",
         "bs-result-ex",
         "bs-batteries"
     ],

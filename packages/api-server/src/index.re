@@ -84,7 +84,7 @@ let saveNapsterTokens = (req, accessToken, refreshToken, userId) =>
             if (Session.set(req, { ...session, napsterAccessToken: Some(accessToken) })) {
                 userId;
             } else {
-                failwith("Error saving access token");
+                Js.Exn.raiseError("Error saving access token");
             };
         });
 

@@ -26,7 +26,8 @@ let checkLoggedIn = ({ ReasonReact.reduce }) =>
         |> catch((exn) => {
             Js.log2("doInitialLoad Error", exn);
             resolve()
-        });
+        })
+        |> ignore;
 
 let make = (_) => {
     ...component,
@@ -34,7 +35,10 @@ let make = (_) => {
     render: (self) => {
         let { ReasonReact.state, reduce } = self;
 
-        /* checkLoggedIn self; */
+        (state === Initializing) ?
+            checkLoggedIn(self)
+        :
+            ();
 
         let content =
             switch state {
@@ -46,7 +50,7 @@ let make = (_) => {
         <div className="root"> content </div>
     },
 
-    initialState: () => LoggedOut, /* Initializing */
+    initialState: () => Initializing,
 
     reducer: (action, _) =>
         switch action {
