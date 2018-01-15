@@ -61,3 +61,5 @@ lib/
 
 # ppl
 package-links.json
+
+.bsb.lock
