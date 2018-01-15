@@ -19,6 +19,6 @@ let config = Config.get("mopho-api-server") |> config__from_json;
 let config =
     switch config {
         | Ok(c) => c
-        | Error(Some(key)) => Js.Exn.raiseError("Invalid key: " ++ key)
-        | Error(_) => Js.Exn.raiseError("Invalid config")
+        | Error(Some(key)) => Js.Exn.raiseError("Error loading mopho-api-server config: " ++ key)
+        | Error(_) => Js.Exn.raiseError("Error loading mopho-api-server config")
     };

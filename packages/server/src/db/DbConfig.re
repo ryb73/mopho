@@ -8,6 +8,7 @@ type config = {
 
 let config =
     switch (config__from_json(Config.get("mopho-db"))) {
+        | Error(Some(s)) => Js.Exn.raiseError("Error loading mopho-db config (" ++ s ++ ")")
         | Error(_) => Js.Exn.raiseError("Error loading mopho-db config")
         | Ok(c) => c
     };
