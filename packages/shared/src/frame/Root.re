@@ -12,21 +12,31 @@ type state =
 
 [@noserialize]
 type action =
-    | SetLoggedIn
-    | SetLoggedOut;
+    | SetLoggedIn(bool);
 
 let component = ReasonReact.reducerComponent("Root");
 
 let go = (reduce, action) => reduce((_) => action, ());
 
+let getReqResult = [@bs.open] (fun
+    | Superagent.ReqError(result) => result
+);
+
+/*
+    Makes an arbitrary API call (Apis.GetMyUserData) and if it succeeds,
+    it means the user is logged in. If we get a 403 error, they're
+    logged out.
+ */
 let checkLoggedIn = ({ ReasonReact.reduce }) =>
     Apis.GetMyUserData.request(config.apiUrl, ())
-        |> map((_) => go(reduce, SetLoggedIn))
-        |> thenResolve()
+        |> thenResolve(true)
         |> catch((exn) => {
-            Js.log2("doInitialLoad Error", exn);
-            resolve()
+            switch (getReqResult(exn)) {
+                | Some({ statusCode: 403 }) => resolve(false)
+                | _ => reject(Obj.magic(exn))
+            };
         })
+        |> map((loggedIn) => go(reduce, SetLoggedIn(loggedIn)))
         |> ignore;
 
 let make = (_) => {
@@ -43,7 +53,7 @@ let make = (_) => {
         let content =
             switch state {
                 | Initializing => <span> (s2e("Initializing")) </span>
-                | LoggedOut => <Login onLoggedIn=(reduce((_) => SetLoggedIn)) />
+                | LoggedOut => <Login onLoggedIn=(reduce((_) => SetLoggedIn(true))) />
                 | LoggedIn => <Foundation />
             };
 
@@ -54,7 +64,6 @@ let make = (_) => {
 
     reducer: (action, _) =>
         switch action {
-            | SetLoggedIn => ReasonReact.Update(LoggedIn)
-            | SetLoggedOut => ReasonReact.Update(LoggedOut)
+            | SetLoggedIn(loggedIn) => ReasonReact.Update(loggedIn ? LoggedIn : LoggedOut)
         }
 };

@@ -62,6 +62,6 @@ let promise =
 
 promise
     |> catch((exn) => {
-        Js.log(exn);
-        resolve()
+        Js.log2("Error in NapsterAuth: ", exn);
+        resolve();
     });

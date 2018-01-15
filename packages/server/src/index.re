@@ -58,10 +58,6 @@ Apis.GenerateState.(
                     resolve(ErrorCode(500));
                 };
             })
-            |> catch((error) => {
-                Js.log(error);
-                resolve(ErrorCode(500));
-            })
     )
 );
 
