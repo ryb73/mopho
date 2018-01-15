@@ -1,0 +1,38 @@
+{
+  "name": "mopho-shared",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run clean && bsb -make-world",
+    "watch": "npm run clean && bsb -make-world -w",
+    "clean": "rm -rf lib && bsb -clean-world",
+    "webpack": "webpack -w"
+  },
+  "keywords": [],
+  "license": "GPL-2.0",
+  "author": "Ryan Biwer",
+  "_": [],
+  "repository": "git@github.com:ryb73/mopho.git",
+  "peerDependencies": {
+    "bs-platform": "^2.0.0"
+  },
+  "devDependencies": {
+    "bs-webapi": "^0.7.0",
+    "copy-webpack-plugin": "^4.0.1",
+    "css-loader": "^0.28.7",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "font-awesome": "^4.7.0",
+    "gridlex": "^2.4.1",
+    "node-sass": "^4.5.3",
+    "qs": "^6.5.1",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1",
+    "reason-react": "^0.2.4",
+    "sass-loader": "^6.0.6",
+    "simple-oauth2": "^1.3.0",
+    "webpack": "^3.6.0",
+    "webpack-closure-compiler": "^2.1.5"
+  }
+}
