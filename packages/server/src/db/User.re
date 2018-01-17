@@ -101,6 +101,10 @@ let _generateAndHash = (salt) =>
         |> then_((code) =>
             Std.secureHash(salt, code)
                 |> map((hash) => (code, hash))
+                |> catch((exn) => {
+                    Js.log2("errrr",exn);
+                    Js.Exn.raiseError("oops");
+                })
         );
 
 let getCurrentUtc = () => momentUtc() |> Moment.defaultFormat;

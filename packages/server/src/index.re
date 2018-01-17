@@ -98,10 +98,15 @@ let () = {
     let loginWithToken = (req, body) => {
         Js.log2("ip:", getIp(req));
         NapsterApi.me(body.access_token)
+            |> tap(Js.log2("1"))
             |> map(({ NapsterApi.me }) => me)
+            |> tap(Js.log2("2"))
             |> then_(getUserIdFromNapsterMember)
+            |> tap(Js.log2("3"))
             |> then_(saveNapsterTokens(req, body.access_token, body.refresh_token))
-            |> then_(Db.User.generateAuthCode(getIp(req)));
+            |> tap(Js.log2("4"))
+            |> then_(Db.User.generateAuthCode(getIp(req)))
+            |> tap(Js.log2("5"))
     };
 
     let returnAuthCode = (authCode) => Result({mophoCode: authCode });

@@ -19,8 +19,8 @@ module.exports = {
     name: "shared-bs",
 
     entry: {
-        index: rel("src/frame/index.re"),
-        "napster-auth": rel("src/frame/NapsterAuth.re"),
+        index: rel("lib/js/src/frame/index.js"),
+        "napster-auth": rel("lib/js/src/frame/NapsterAuth.js"),
     },
 
     output: {
@@ -28,23 +28,7 @@ module.exports = {
         filename: "[name].js",
     },
 
-    module: {
-        rules: [
-            {
-                test: /\.(re|ml)$/,
-                use: {
-                    loader: "bs-loader",
-                    options: {
-                        cwd: rel(""),
-                        excludedWarnings: [ /.*Duplicated package:.+\n?/g ]
-                    }
-                }
-            },
-        ]
-    },
-
     resolve: {
-        extensions: ['.re', '.ml', '.js'],
         alias: {
             config: rel("config/config-adapter"),
         }
@@ -53,7 +37,6 @@ module.exports = {
     plugins: [
         new webpack.WatchIgnorePlugin([
             rel("node_modules/"),
-            ...getSymlinkedDirs()
         ]),
 
         new webpack.DefinePlugin({ "global.GENTLY": false }),
@@ -91,22 +74,3 @@ module.exports = {
 
     // devtool: "source-map",
 };
-
-function getSymlinkedDirs(nodeModulesPath) {
-    if(!nodeModulesPath)
-        return getSymlinkedDirs(rel("node_modules/"))
-            .filter((pathname) => {
-                return path.relative(rel("../.."), pathname).indexOf("..") >= 0;
-            });
-
-    if(!fs.existsSync(nodeModulesPath))
-        return [];
-
-    return fs.readdirSync(nodeModulesPath)
-        .map((dirName) => path.join(nodeModulesPath, dirName))
-        .filter((path) => fs.lstatSync(path).isSymbolicLink())
-        .map((path) => fs.realpathSync(path))
-        .reduce((previousPaths, pathname) => {
-            return [ ...previousPaths, pathname, ...getSymlinkedDirs(path.join(pathname, "node_modules/")) ];
-        }, []);
-}
