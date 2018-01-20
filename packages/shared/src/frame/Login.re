@@ -2,9 +2,11 @@ open ReDomSuite;
 open Option;
 open Option.Infix;
 open FrameConfig;
-open Js.Promise;
+open Bluebird;
 
-let mapP = PromiseEx.map;
+module BluebirdEx = PromiseEx.Make(Bluebird);
+
+let mapP = BluebirdEx.map;
 let s2e = ReasonReact.stringToElement;
 
 [@noserialize]

@@ -1,17 +1,20 @@
-open Js.Promise;
+open Bluebird;
 open Js.Result;
 open ResultEx;
-open PromiseEx;
 open Squel;
 open Params.Infix;
-open Option.Infix;
 open MomentRe;
 
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
+
+let testAffectedRows = DbHelper.testAffectedRows;
+
 let flip = BatPervasives.flip;
-let map = PromiseEx.map;
+let map = BluebirdEx.map;
 let pool = DbPool.pool;
 
-let doQuery = (query) => Mysql.Queryable.query(pool, query);
+let doQuery = (query) => Mysql.Queryable.query(pool, query) |> fromPromise;
 
 let setNapsterId = (userId: int, napsterId: string) => {
     open Insert;
@@ -35,10 +38,10 @@ let create = (name: string) => {
         |> set("name", name)
         |> toString
         |> doQuery
-        |> then_(((result, _)) =>
+        |> map(((result, _)) =>
             switch (insertResult__from_json(result)) {
                 | Error(_) => Js.Exn.raiseError("Error converting insert result")
-                | Ok({insertId}) => resolve(insertId)
+                | Ok({insertId}) => insertId
             }
         );
 };
@@ -68,22 +71,7 @@ let getFromNapsterId = (napsterId: string) => {
         )
 };
 
-let _testAffectedRows = (~expected=1, (result, _)) => {
-    let affectedRows = Js.Json.decodeObject(result)
-        >>= flip(Js.Dict.get, "affectedRows")
-        >>= Js.Json.decodeNumber;
-
-    switch affectedRows {
-        | Some(actual) =>
-            if (Js.Math.floor(actual) === expected) {
-                ();
-            } else {
-                Js.Exn.raiseError("Affected rows " ++ Js.String.make(actual) ++ " <> " ++ Js.String.make(expected));
-            }
-        | _ => Js.Exn.raiseError("Affected rows empty")
-    };
-};
-
+/* TODO: encrypt refresh token? */
 let setNapsterRefreshToken = (userId: int, refreshToken: string) => {
     open Update;
 
@@ -93,7 +81,7 @@ let setNapsterRefreshToken = (userId: int, refreshToken: string) => {
         |> where("userId = ?" |?. userId)
         |> toString
         |> doQuery
-        |> map(_testAffectedRows);
+        |> map(testAffectedRows);
 };
 
 let _generateAndHash = (salt) =>
@@ -107,7 +95,7 @@ let _generateAndHash = (salt) =>
                 })
         );
 
-let getCurrentUtc = () => momentUtc() |> Moment.defaultFormat;
+let _getCurrentUtc = () => momentUtc() |> Moment.defaultFormat;
 
 let generateAuthCode = (salt, userId: int) => Insert.(
     _generateAndHash(salt)
@@ -116,7 +104,7 @@ let generateAuthCode = (salt, userId: int) => Insert.(
                 |> into("auth_codes")
                 |> set("userId", userId)
                 |> set("authCodeHash", hash)
-                |> set("createdUtc", getCurrentUtc())
+                |> set("createdUtc", _getCurrentUtc())
                 |> toString
                 |> doQuery
                 |> thenResolve(code);
@@ -140,10 +128,10 @@ let _createAuthToken = (salt, userId: int) => Insert.(
                 |> into("auth_tokens")
                 |> set("userId", userId)
                 |> set("tokenHash", hash)
-                |> set("createdUtc", getCurrentUtc())
+                |> set("createdUtc", _getCurrentUtc())
                 |> toString
                 |> doQuery
-                |> tap(_testAffectedRows)
+                |> tap(testAffectedRows)
                 |> thenResolve(token)
         )
 );

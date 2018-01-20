@@ -1,7 +1,9 @@
-open Js.Promise;
-open PromiseEx;
+open Bluebird;
 open ReDomSuite;
 open FrameConfig;
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 module QsParser = Qs.MakeParser({
     [@noserialize]
@@ -12,11 +14,10 @@ module QsParser = Qs.MakeParser({
 });
 
 let napsterReady = make((~resolve, ~reject as _) => {
-    Napster.init(config.napsterApiKey, "v2.2");
-    Napster.on(Ready, (d) => {
+    NapsterPlayer.init(config.napsterApiKey, "v2.2");
+    NapsterPlayer.on(Ready, (d) => {
         Js.log2("ready!", d);
-        let u = ();
-        [@bs] resolve(u);
+        resolve();
     });
 });
 

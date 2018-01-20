@@ -1,23 +1,33 @@
 open NodeEx;
-open PromiseEx;
 open Express;
+open Bluebird;
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
+
+let (%>) = BatPervasives.(%>);
+
+[@bs.new] external makeJsExn : exn => exn = "Error";
 
 exception JsException(exn);
 
 let generateRandomBase64 = () =>
-    Js.Promise.make((~resolve, ~reject) =>
+    Bluebird.make((~resolve, ~reject) =>
           Crypto.randomBytes(16, (result) =>
               switch result {
-                  | Error(e) => [@bs] reject(JsException(e))
-                  | Ok(buffer) => [@bs] resolve(Base64Url.fromBuffer(buffer))
+                  | Error(e) => reject(JsException(e))
+                  | Ok(buffer) => resolve(Base64Url.fromBuffer(buffer))
               }
           )
     );
 
-let _scryptParams = lazy (Scrypt.paramsSync(0.5, ()));
+let _scryptParams = Scrypt.paramsSync(0.5, ());
 
-let secureHash = (salt, key) =>
-    Scrypt.hash(key, Lazy.force(_scryptParams), 64, salt)
+let secureHash = (salt, key) => {
+    Scrypt.hash(key, _scryptParams, 64, salt)
+        |> fromPromise
+        |> catch(makeJsExn %> reject)
         |> map(Base64Url.fromBuffer);
+};
 
 let getIp = (req) => Request.ip(req);

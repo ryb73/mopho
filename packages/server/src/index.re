@@ -1,8 +1,13 @@
 open Std;
-open Js.Promise;
-open PromiseEx;
+open Bluebird;
 open MomentRe;
+open Option.Infix;
 open! Middleware; /* Ignore warnings because of ppx_autoserialize */
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
+
+let (%>) = BatPervasives.(%>);
 
 module App = Express.App;
 module Response = Express.Response;
@@ -10,7 +15,7 @@ module Response = Express.Response;
 let flip = BatPervasives.flip;
 let config = ConfigLoader.config;
 
-module NapsterApi = NapsterApi.Make({ let apiKey = config.napster.apiKey; });
+module NapsterApi = BsNapsterApi.Api.Make({ let apiKey = config.napster.apiKey; });
 
 let app = App.make();
 
@@ -61,7 +66,7 @@ Apis.GenerateState.(
     )
 );
 
-let getUserIdFromNapsterMember = ({ NapsterApi.id, realName }) =>
+let getUserIdFromNapsterMember = ({ BsNapsterApi.Types.Member.id, realName }) =>
     Db.User.getFromNapsterId(id)
         |> then_((userId) =>
               switch userId {
@@ -74,22 +79,13 @@ let getUserIdFromNapsterMember = ({ NapsterApi.id, realName }) =>
               }
           );
 
-let saveNapsterTokens = (req, accessToken, refreshToken, userId) =>
-    Db.User.setNapsterRefreshToken(userId, refreshToken)
-        |> map(() => {
-            let session = getSession(req);
-            if (Session.set(req, { ...session, napsterAccessToken: Some(accessToken) })) {
-                userId;
-            } else {
-                Js.Exn.raiseError("Error saving access token");
-            };
-        });
-
-[@autoserialize]
-type napsterApiAccessToken = {
-    access_token: string,
-    refresh_token: string,
-    expires_in: int
+let setSessionNapsterToken = (req, accessToken) => {
+    let session = getSession(req);
+    if (Session.set(req, { ...session, napsterAccessToken: Some(accessToken) })) {
+        ();
+    } else {
+        Js.Exn.raiseError("Error saving access token");
+    };
 };
 
 let () = {
@@ -97,37 +93,24 @@ let () = {
 
     let loginWithToken = (req, body) => {
         Js.log2("ip:", getIp(req));
-        NapsterApi.me(body.access_token)
+        NapsterApi.me(body.EAuthNapster.access_token)
             |> tap(Js.log2("1"))
             |> map(({ NapsterApi.me }) => me)
             |> tap(Js.log2("2"))
             |> then_(getUserIdFromNapsterMember)
             |> tap(Js.log2("3"))
-            |> then_(saveNapsterTokens(req, body.access_token, body.refresh_token))
+            |> tap(flip(Db.User.setNapsterRefreshToken, body.refresh_token))
             |> tap(Js.log2("4"))
-            |> then_(Db.User.generateAuthCode(getIp(req)))
+            |> tap((_) => setSessionNapsterToken(req, body.access_token))
             |> tap(Js.log2("5"))
+            |> then_(Db.User.generateAuthCode(getIp(req)))
+            |> tap(Js.log2("6"))
     };
 
     let returnAuthCode = (authCode) => Result({mophoCode: authCode });
 
     let requestAccessTokens = (req, code) => {
-        let reqData =
-            Js.Dict.fromList([
-                ("client_id", config.napster.apiKey),
-                ("client_secret", config.napster.secret),
-                ("response_type", "code"),
-                ("grant_type", "authorization_code"),
-                ("code", code)
-            ])
-            |> Js.Dict.map([@bs] ((s) => Js.Json.string(s)))
-            |> Js.Json.object_;
-
-        Superagent.post("https://api.napster.com/oauth/access_token")
-            |> Superagent.Post.send(reqData)
-            |> Superagent.Post.end_
-            |> map(RespParser.parse(napsterApiAccessToken__from_json))
-            |> unwrapResult
+        EAuthNapster.getTokensFromCode(code)
             |> then_(loginWithToken(req))
             |> map(returnAuthCode);
     };
@@ -138,7 +121,10 @@ let () = {
             | None => resolve(ErrorCode(400))
 
             | Some(actualState) =>
-                actualState === state ? requestAccessTokens(req, code) : resolve(ErrorCode(400))
+                actualState === state ?
+                    requestAccessTokens(req, code)
+                :
+                    resolve(ErrorCode(400))
         };
     });
 };
@@ -164,13 +150,53 @@ Apis.LogInWithCode.handle(app, (req, resp, _, code) =>
 
 module GetMyUserData = Priveleged.Make(Apis.GetMyUserData);
 
-GetMyUserData.handle(app, (_, _, _, _, user) => GetMyUserData.Result(user));
+GetMyUserData.handle(app, (_, _, _, _, user) =>
+    resolve(GetMyUserData.Result(user))
+);
 
 module LogOut = Priveleged.Make(Apis.LogOut);
 
 LogOut.handle(app, (_, resp, _, _, _) => {
     Response.clearCookie(resp, Priveleged.authTokenCookie);
-    LogOut.Result();
+    resolve(LogOut.Result());
+});
+
+let getNapsterAccessToken = (req, userId) => {
+    let token = getSession(req).napsterAccessToken;
+    (Option.is_some(token)) ?
+        resolve(token)
+    :
+        EAuthNapster.refreshAccessToken(userId)
+            |> mapMaybe(({ EAuthNapster.access_token }) => access_token);
+};
+
+module Search = Priveleged.Make(Apis.Search);
+Search.handle(app, (req, _, _, query, user) => {
+    getNapsterAccessToken(req, user.id)
+        |> tapMaybe(setSessionNapsterToken(req) %> resolve)
+        |> thenMaybe((accessToken) => {
+            flip(
+                NapsterApi.search(~types=[| BsNapsterApi.Types.Search.Artists, Albums, Tracks |]),
+                query
+            )(accessToken)
+        })
+        |> thenMaybe(({ BsNapsterApi.Types.Search.search: { data }}) => {
+            all3
+                ((
+                    data.artists |? [||]
+                        |> Js.Array.map(NapsterSource.matchArtist)
+                        |> all
+                        |> map(Js.Array.filter(Option.is_some))
+                        |> map(Js.Array.map(Option.get)),
+                    resolve([||]),
+                    resolve([||])
+                ))
+                |> map(((artists, albums, tracks)) => Search.Result({ artists, albums, tracks }));
+        })
+        |> map(fun
+            | Some(v) => v
+            | None => Search.ErrorCode(500)
+        );
 });
 
 App.listen(app, ~onListen=(_) => Js.log("listening"), ());

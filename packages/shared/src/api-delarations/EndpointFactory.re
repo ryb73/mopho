@@ -1,8 +1,10 @@
 open Express;
-open Js.Promise;
+open Bluebird;
 open Js.Result;
 open Option.Infix;
-open PromiseEx;
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 let flip = BatPervasives.flip;
 
@@ -30,8 +32,8 @@ module type Endpoint = {
         | ExpressAction(done_);
 
     let handle:
-      (App.t, (Request.t, Response.t, Middleware.next, req) => Js.Promise.t(handlerResult)) => unit;
-    let request: (string, req) => Js.Promise.t(resp);
+      (App.t, (Request.t, Response.t, Middleware.next, req) => Bluebird.t(handlerResult)) => unit;
+    let request: (string, req) => Bluebird.t(resp);
 };
 
 module Endpoint = (Definition: Definition) => {
@@ -70,7 +72,7 @@ module Endpoint = (Definition: Definition) => {
 
         methodFunc(app, ~path=Definition.path, Middleware.fromAsync((req, resp, next) =>
             switch (reqParser(req)) {
-                | Error(_) => resolve @@ returnCode(400, resp)
+                | Error(_) => resolve(returnCode(400, resp))
 
                 | Ok(data) =>
                     callback(req, resp, next, data)
@@ -84,9 +86,10 @@ module Endpoint = (Definition: Definition) => {
                         |> catch((err) => {
                             Js.log("Error in " ++ Definition.path ++ ":");
                             Js.log(err);
-                            resolve @@ returnCode(500, resp)
+                            resolve(returnCode(500, resp))
                         })
             }
+            |> toPromise
         ));
     };
 

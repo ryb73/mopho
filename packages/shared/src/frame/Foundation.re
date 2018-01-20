@@ -1,6 +1,8 @@
 open FrameConfig;
-open PromiseEx;
-open Js.Promise;
+open Bluebird;
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 let s2e = ReasonReact.stringToElement;
 
@@ -27,7 +29,7 @@ let a: (module Component) = (module MainPane);
 
 let component = ReasonReact.reducerComponent("Foundation");
 
-Napster.on(Error, (error) => Js.log2("Error:", error));
+NapsterPlayer.on(Error, (error) => Js.log2("Error:", error));
 
 let doInitialLoad = () => {
     Apis.GetMyUserData.request(config.apiUrl, ())
@@ -53,6 +55,16 @@ let logOut = (_) => {
 
 let getUser = (_) => doInitialLoad();
 
+let testSearch = (_) => {
+    Apis.Search.request(config.apiUrl, "mitski")
+        |> map(Js.log2("search results"))
+        |> catch((exn) => {
+            Js.log2("search error", exn);
+            resolve();
+        })
+        |> ignore;
+};
+
 let make = (_) => {
     ...component,
 
@@ -65,6 +77,9 @@ let make = (_) => {
                     (s2e("Leftbar"))
                     <a href="#" onClick=logOut> (s2e("Log Out")) </a>
                     <a href="#" onClick=getUser> (s2e("Get User")) </a>
+                    <p>
+                        <button onClick=testSearch>(s2e("Search"))</button>
+                    </p>
                 </div>
                 <MainPane />
             </div>

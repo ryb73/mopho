@@ -1,11 +1,11 @@
-let config = DbConfig.config;
+let _config = DbConfig.config;
 
-let connOpts = Mysql.Connection.options(
-    ~host=config.host,
-    ~user=config.user,
-    ~password=config.password,
-    ~database=config.database, ()
+let _connOpts = Mysql.Connection.options(
+    ~host=_config.host,
+    ~user=_config.user,
+    ~password=_config.password,
+    ~database=_config.database, ()
 );
 
-let opts = Mysql.Pool.options(connOpts);
-let pool = Mysql.Pool.make(opts);
+let _opts = Mysql.Pool.options(_connOpts);
+let pool = Mysql.Pool.make(_opts);

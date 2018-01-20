@@ -18,6 +18,7 @@
         "bs-mysql",
         "bs-squel",
         "bs-result-ex",
+        "bs-bluebird"
     ],
     "sources" : [
         {

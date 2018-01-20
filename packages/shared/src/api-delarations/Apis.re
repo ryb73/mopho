@@ -18,7 +18,6 @@ module NapsterAuth_impl = {
     let path = "/napster-auth/";
     let reqMethod = Get;
 };
-
 module NapsterAuth = Endpoint(NapsterAuth_impl);
 
 module LogInWithCode = Endpoint({
@@ -34,7 +33,6 @@ module GetMyUserData_impl = {
     let path = "/get-my-user-data/";
     let reqMethod = Get;
 };
-
 module GetMyUserData = Endpoint(GetMyUserData_impl);
 
 module LogOut = Endpoint({
@@ -43,3 +41,15 @@ module LogOut = Endpoint({
     let path = "/log-out/";
     let reqMethod = Post;
 });
+
+module Search_impl = {
+    [@autoserialize] type req = string;
+    [@autoserialize] type resp = {
+        artists: array(Models.Artist.t),
+        albums: array(Models.Album.t),
+        tracks: array(Models.Track.t)
+    };
+    let path = "/search/";
+    let reqMethod = Get;
+};
+module Search = Endpoint(Search_impl);

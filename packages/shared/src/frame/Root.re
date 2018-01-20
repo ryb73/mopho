@@ -1,6 +1,8 @@
 open FrameConfig;
-open PromiseEx;
-open Js.Promise;
+open Bluebird;
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 let s2e = ReasonReact.stringToElement;
 
@@ -24,7 +26,7 @@ let getReqResult = [@bs.open] (fun
 
 /*
     Makes an arbitrary API call (Apis.GetMyUserData) and if it succeeds,
-    it means the user is logged in. If we get a 403 error, they're
+    it means the user is logged in. If we get a 401 error, they're
     logged out.
  */
 let checkLoggedIn = ({ ReasonReact.reduce }) =>
@@ -32,7 +34,7 @@ let checkLoggedIn = ({ ReasonReact.reduce }) =>
         |> thenResolve(true)
         |> catch((exn) => {
             switch (getReqResult(exn)) {
-                | Some({ statusCode: 403 }) => resolve(false)
+                | Some({ statusCode: 401 }) => resolve(false)
                 | _ => reject(Obj.magic(exn))
             };
         })

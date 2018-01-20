@@ -12,7 +12,8 @@
         "bs-promise-ex",
         "bs-config",
         "bs-express",
-        "bs-result-ex"
+        "bs-result-ex",
+        "bs-bluebird"
     ],
     "sources" : [
         {

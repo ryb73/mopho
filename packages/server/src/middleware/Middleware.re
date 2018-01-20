@@ -1,11 +1,15 @@
-module Priveleged = {
-    open EndpointFactory;
-    open Express;
-    open Option;
-    open PromiseEx;
+open EndpointFactory;
+open Express;
+open Option;
+open Bluebird;
 
-    let mapP = PromiseEx.map;
-    let mapO = Option.map;
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
+
+let mapP = BluebirdEx.map;
+let mapO = Option.map;
+
+module Priveleged = {
     let authTokenCookie = "auth_token";
 
     module Make = (Endpoint: Endpoint) => {
@@ -20,9 +24,9 @@ module Priveleged = {
                     |> mapO(Db.User.getUserFromToken(Std.getIp(req)))
                     |> invertOptional
                     |> mapP(flatten)
-                    |> mapP((optUser) =>
+                    |> then_((optUser) =>
                         switch optUser {
-                            | None => ErrorCode(403)
+                            | None => resolve(ErrorCode(401))
                             | Some(user) => callback(req, resp, next, data, user)
                         }
                     );
