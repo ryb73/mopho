@@ -1,27 +1,43 @@
 open ReactStd;
 
-type state = (module Component);
+type state = (module ReactStd.PageChange.Component);
 
 type action =
   | SetPage((module Component));
 
 let component = ReasonReact.reducerComponent("MainPane");
 
-let make = (~context, _) => {
-    ...component,
+let make = (_) => {
+    {
+        ...component,
 
-    render: ({ state }) => {
-        module Page = (val state : Component);
+        render: ({ state, reduce }) => {
+            module Page = (val state : Component);
 
-        <div className="main-pane">
-            <Page context />
-        </div>
-    },
+            let context = {
+                Context.navigate: (pageChange) => {
+                    module PageChange = (val pageChange);
+                    module NewPage = {
+                        module PageComponent = (val PageChange.component);
+                        include PageComponent;
+                        let make = make(~dynamicProps=PageChange.dynamicProps);
+                    };
 
-    initialState: () : state => (module HomePage),
+                    go(reduce, SetPage((module NewPage)));
+                    ();
+                }
+            };
 
-    reducer: (action, _) =>
-        switch action {
-            | SetPage(page) => ReasonReact.Update(page)
-        }
+            <div className="main-pane">
+                <Page context />
+            </div>
+        },
+
+        initialState: () : state => (module HomePage),
+
+        reducer: (action, _) =>
+            switch action {
+                | SetPage(page) => ReasonReact.Update(page)
+            }
+    };
 };

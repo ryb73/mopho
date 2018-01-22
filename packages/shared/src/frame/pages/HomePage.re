@@ -1,3 +1,4 @@
+open FrameConfig;
 open ReactStd;
 open Bluebird;
 
@@ -9,8 +10,8 @@ type state = option(Apis.Search_impl.resp);
 type action =
     | SetSearchResults(Apis.Search_impl.resp);
 
-let logOut = ({ Context.apiUrl }, _) => {
-    Apis.LogOut.request(apiUrl, ())
+let logOut = (_) => {
+    Apis.LogOut.request(config.apiUrl, ())
         |> map(() => Js.log("logged out"))
         |> catch((exn) => {
             Js.log2("logout error", exn);
@@ -20,60 +21,45 @@ let logOut = ({ Context.apiUrl }, _) => {
     ();
 };
 
-let testSearch = ({ Context.apiUrl }, _, { ReasonReact.reduce }) => {
-    Apis.Search.request(apiUrl, "mitski")
+let testSearch = ({ Context.navigate }, _, { ReasonReact.reduce }) => {
+    module PageChange = {
+        type dynamicProps = SearchPage.dynamicProps;
+        type context = Context.t;
+
+        module type Component = {
+            type retainedProps;
+            type state;
+            type action;
+            let make: (~dynamicProps: dynamicProps, ~context: context, array(unit))
+                => ReasonReact.component(state, retainedProps, action);
+        };
+
+        let component = (module SearchPage : Component);
+        let dynamicProps = "mitski";
+    };
+
+    navigate((module PageChange));
+
+    /* Apis.Search.request(config.apiUrl, "mitski")
         |> map(results => go(reduce, SetSearchResults(results)))
         |> catch((exn) => {
             Js.log2("search error", exn);
             resolve();
         })
-        |> ignore;
+        |> ignore; */
 };
-
-let renderArtist = (artist) =>
-    <li key=(string_of_int(artist.Models.Artist.id))>(s2e(artist.name))</li>;
-
-let renderAlbum = (album) =>
-    <li key=(string_of_int(album.Models.Album.id))>(s2e(album.name))</li>;
-
-let renderTrack = (track) =>
-    <li key=(string_of_int(track.Models.Track.id))>(s2e(track.name))</li>;
-
-let renderSearchResults = ({ ReasonReact.state }) =>
-    switch state {
-        | None => ReasonReact.nullElement
-        | Some(results) =>
-            <div>
-                <h2>(s2e("Artists"))</h2>
-                <ul>
-                    (ReasonReact.arrayToElement(Js.Array.map(renderArtist, results.Apis.Search_impl.artists)))
-                </ul>
-
-                <h2>(s2e("Albums"))</h2>
-                <ul>
-                    (ReasonReact.arrayToElement(Js.Array.map(renderAlbum, results.albums)))
-                </ul>
-
-                <h2>(s2e("Tracks"))</h2>
-                <ul>
-                    (ReasonReact.arrayToElement(Js.Array.map(renderTrack, results.tracks)))
-                </ul>
-            </div>
-    };
 
 let component = ReasonReact.reducerComponent("HomePage");
 
-let make : ((~context: Context.t, array(unit))
-=> ReasonReact.component(_, _, _)) = (~context, _) => {
+let make = (~context, _) => {
     ...component,
 
     render: (self) => {
         let { ReasonReact.handle } = self;
 
         <div>
-            <button onClick=(logOut(context))>(s2e("Log Out"))</button>
+            <button onClick=(logOut)>(s2e("Log Out"))</button>
             <button onClick=(handle(testSearch(context)))>(s2e("Search"))</button>
-            (renderSearchResults(self))
         </div>;
     },
 
