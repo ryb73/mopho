@@ -21,7 +21,7 @@ let logOut = (_) => {
     ();
 };
 
-let testSearch = ({ Context.navigate }, _, { ReasonReact.reduce }) => {
+let testSearch = ({ Context.navigate }, _, _) => {
     module PageChange = {
         type dynamicProps = SearchPage.dynamicProps;
         type context = Context.t;
@@ -39,14 +39,6 @@ let testSearch = ({ Context.navigate }, _, { ReasonReact.reduce }) => {
     };
 
     navigate((module PageChange));
-
-    /* Apis.Search.request(config.apiUrl, "mitski")
-        |> map(results => go(reduce, SetSearchResults(results)))
-        |> catch((exn) => {
-            Js.log2("search error", exn);
-            resolve();
-        })
-        |> ignore; */
 };
 
 let component = ReasonReact.reducerComponent("HomePage");

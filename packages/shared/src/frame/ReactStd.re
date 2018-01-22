@@ -16,7 +16,7 @@ module type PageChange = {
 
 module Context = {
     type t = {
-        navigate: (module PageChange) => unit
+        navigate: (module PageChange with type context = t) => unit
     };
 };
 

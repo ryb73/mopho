@@ -1,6 +1,6 @@
 open ReactStd;
 
-type state = (module ReactStd.PageChange.Component);
+type state = (module Component);
 
 type action =
   | SetPage((module Component));

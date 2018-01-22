@@ -1,9 +1,27 @@
+open FrameConfig;
 open ReactStd;
+open Bluebird;
+
+module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 type dynamicProps = string;
 type retainedProps = ReasonReact.noRetainedProps;
 type state = option(Apis.Search_impl.resp);
 type action = Apis.Search_impl.resp;
+
+let doSearch = ({ ReasonReact.reduce }, query) => {
+    Apis.Search.request(config.apiUrl, query)
+        |> map(go(reduce))
+        |> catch((exn) => {
+            Js.log2("search error", exn);
+            resolve();
+        });
+
+    <span>
+        (s2e("searching..."))
+    </span>
+};
 
 let renderArtist = (artist) =>
     <li key=(string_of_int(artist.Models.Artist.id))>(s2e(artist.name))</li>;
@@ -15,13 +33,14 @@ let renderTrack = (track) =>
     <li key=(string_of_int(track.Models.Track.id))>(s2e(track.name))</li>;
 
 let component = ReasonReact.reducerComponent("SearchPage");
-let blah = (~dynamicProps: dynamicProps, ()) => ();
-let make = (~dynamicProps: dynamicProps, ~context as _, _) => {
+let make = (~dynamicProps as query, ~context as _, _) => {
     ...component,
 
-    render: ({ state }) => {
+    render: (self) => {
+        let { ReasonReact.state } = self;
+
         switch state {
-            | None => (s2e("searching..."))
+            | None => doSearch(self, query)
             | Some(results) =>
                 <div>
                     <h2>(s2e("Artists"))</h2>
