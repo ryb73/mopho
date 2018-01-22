@@ -5,8 +5,6 @@ open ReactStd;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
-let s2e = ReasonReact.stringToElement;
-
 [@noserialize]
 type state =
     | Initializing
@@ -18,7 +16,6 @@ type action =
     | SetLoggedIn(bool);
 
 let component = ReasonReact.reducerComponent("Root");
-
 
 let getReqResult = [@bs.open] (fun
     | Superagent.ReqError(result) => result

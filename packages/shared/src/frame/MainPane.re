@@ -1,6 +1,27 @@
-let component = ReasonReact.statelessComponent("MainPane");
+open ReactStd;
 
-let make = (_) => {
+type state = (module Component);
+
+type action =
+  | SetPage((module Component));
+
+let component = ReasonReact.reducerComponent("MainPane");
+
+let make = (~context, _) => {
     ...component,
-    render: (_) => <div className="main-pane"> (ReasonReact.stringToElement("main panneeee")) </div>
+
+    render: ({ state }) => {
+        module Page = (val state : Component);
+
+        <div className="main-pane">
+            <Page context />
+        </div>
+    },
+
+    initialState: () : state => (module HomePage),
+
+    reducer: (action, _) =>
+        switch action {
+            | SetPage(page) => ReasonReact.Update(page)
+        }
 };
