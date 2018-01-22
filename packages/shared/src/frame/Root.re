@@ -1,5 +1,6 @@
 open FrameConfig;
 open Bluebird;
+open ReactStd;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
@@ -18,7 +19,6 @@ type action =
 
 let component = ReasonReact.reducerComponent("Root");
 
-let go = (reduce, action) => reduce((_) => action, ());
 
 let getReqResult = [@bs.open] (fun
     | Superagent.ReqError(result) => result

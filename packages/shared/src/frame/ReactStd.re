@@ -1,0 +1,1 @@
+let go = (reduce, action) => reduce((_) => action, ());

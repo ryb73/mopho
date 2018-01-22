@@ -10,6 +10,11 @@ let matchArtist = ({ Types.Artist.id: napsterId, name }) => {
             | Some(a) => resolve(Some(a))
             | None =>
                 Db.Artist.findByName(name)
-                    |> tapMaybe(Db.Artist.setNapsterId(napsterId))
-        );
+                    |> tapMaybe(Db.Artist.setNapsterId(Some(napsterId)))
+        )
+        |> then_(fun
+            | Some(a) => resolve(Some(a))
+            | None => Db.Artist.createFromNapster(name, napsterId)
+                |> map(Option.some)
+        )
 };

@@ -1,9 +1,8 @@
 open Bluebird;
 open Js.Result;
 open ResultEx;
-open Squel;
-open Params.Infix;
-open MomentRe;
+open BsSquel;
+open BsSquel.Params.Infix;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
@@ -21,29 +20,22 @@ let setNapsterId = (userId: int, napsterId: string) => {
 
     Insert.make()
         |> into("napster_users")
-        |> set("userId", userId)
-        |> set("napsterUserId", napsterId)
+        |> setInt("userId", userId)
+        |> setString("napsterUserId", napsterId)
         |> toString
         |> doQuery
         |> map((_) => ());
 };
-
-[@autoserialize] type insertResult = { insertId: int };
 
 let create = (name: string) => {
     open Insert;
 
     Insert.make()
         |> into("users")
-        |> set("name", name)
+        |> setString("name", name)
         |> toString
         |> doQuery
-        |> map(((result, _)) =>
-            switch (insertResult__from_json(result)) {
-                | Error(_) => Js.Exn.raiseError("Error converting insert result")
-                | Ok({insertId}) => insertId
-            }
-        );
+        |> map(DbHelper.getInsertId)
 };
 
 [@autoserialize] type userIdResult = { userId: int };
@@ -77,7 +69,7 @@ let setNapsterRefreshToken = (userId: int, refreshToken: string) => {
 
     Update.make()
         |> table("napster_users")
-        |> set("refreshToken", refreshToken)
+        |> setString("refreshToken", refreshToken)
         |> where("userId = ?" |?. userId)
         |> toString
         |> doQuery
@@ -95,16 +87,16 @@ let _generateAndHash = (salt) =>
                 })
         );
 
-let _getCurrentUtc = () => momentUtc() |> Moment.defaultFormat;
+
 
 let generateAuthCode = (salt, userId: int) => Insert.(
     _generateAndHash(salt)
         |> then_(((code, hash)) => {
             Insert.make()
                 |> into("auth_codes")
-                |> set("userId", userId)
-                |> set("authCodeHash", hash)
-                |> set("createdUtc", _getCurrentUtc())
+                |> setInt("userId", userId)
+                |> setString("authCodeHash", hash)
+                |> setString("createdUtc", Std.getCurrentUtc())
                 |> toString
                 |> doQuery
                 |> thenResolve(code);
@@ -126,9 +118,9 @@ let _createAuthToken = (salt, userId: int) => Insert.(
         |> then_(((token, hash)) =>
             Insert.make()
                 |> into("auth_tokens")
-                |> set("userId", userId)
-                |> set("tokenHash", hash)
-                |> set("createdUtc", _getCurrentUtc())
+                |> setInt("userId", userId)
+                |> setString("tokenHash", hash)
+                |> setString("createdUtc", Std.getCurrentUtc())
                 |> toString
                 |> doQuery
                 |> tap(testAffectedRows)

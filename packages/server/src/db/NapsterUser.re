@@ -1,9 +1,10 @@
-open Squel;
-open Params.Infix;
+open BsSquel;
+open BsSquel.Params.Infix;
 open Bluebird;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
+
 
 let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromise;
 

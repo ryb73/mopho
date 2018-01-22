@@ -16,12 +16,17 @@ module Album = {
     };
 };
 
+[@autoserialize]
+type metadataSource =
+    | Napster;
+
 module Artist = {
     [@autoserialize]
     type t = {
         id: int,
         name: string,
-        napsterId: option(string)
+        napsterId: option(string),
+        metadataSource: metadataSource
     };
 };
 

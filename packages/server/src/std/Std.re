@@ -1,6 +1,7 @@
 open NodeEx;
 open Express;
 open Bluebird;
+open MomentRe;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
@@ -31,3 +32,5 @@ let secureHash = (salt, key) => {
 };
 
 let getIp = (req) => Request.ip(req);
+
+let getCurrentUtc = () => momentUtc() |> Moment.defaultFormat;

@@ -1,5 +1,6 @@
 open FrameConfig;
 open Bluebird;
+open ReactStd;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
@@ -16,31 +17,16 @@ module type Component = {
     );
 };
 
-[@noserialize]
-type state =
-    | Initializing
-    | Loaded(Models.User.t);
+type state = option(Apis.Search_impl.resp);
 
-[@noserialize]
 type action =
-    | SetUser(Models.User.t);
+    | SetSearchResults(Apis.Search_impl.resp);
 
 let a: (module Component) = (module MainPane);
 
 let component = ReasonReact.reducerComponent("Foundation");
 
 NapsterPlayer.on(Error, (error) => Js.log2("Error:", error));
-
-let doInitialLoad = () => {
-    Apis.GetMyUserData.request(config.apiUrl, ())
-        |> map(Js.log2("user!"))
-        |> catch((exn) => {
-            Js.log2("doInitialLoad Error", exn);
-            resolve()
-        });
-
-    ();
-};
 
 let logOut = (_) => {
     Apis.LogOut.request(config.apiUrl, ())
@@ -53,11 +39,9 @@ let logOut = (_) => {
     ();
 };
 
-let getUser = (_) => doInitialLoad();
-
-let testSearch = (_) => {
+let testSearch = (_, { ReasonReact.reduce }) => {
     Apis.Search.request(config.apiUrl, "mitski")
-        |> map(Js.log2("search results"))
+        |> map(results => go(reduce, SetSearchResults(results)))
         |> catch((exn) => {
             Js.log2("search error", exn);
             resolve();
@@ -65,21 +49,53 @@ let testSearch = (_) => {
         |> ignore;
 };
 
+let renderArtist = (artist) =>
+    <li key=(string_of_int(artist.Models.Artist.id))>(s2e(artist.name))</li>;
+
+let renderAlbum = (album) =>
+    <li key=(string_of_int(album.Models.Album.id))>(s2e(album.name))</li>;
+
+let renderTrack = (track) =>
+    <li key=(string_of_int(track.Models.Track.id))>(s2e(track.name))</li>;
+
+let renderSearchResults = ({ ReasonReact.state }) =>
+    switch state {
+        | None => ReasonReact.nullElement
+        | Some(results) =>
+            <div>
+                <h2>(s2e("Artists"))</h2>
+                <ul>
+                    (ReasonReact.arrayToElement(Js.Array.map(renderArtist, results.Apis.Search_impl.artists)))
+                </ul>
+
+                <h2>(s2e("Albums"))</h2>
+                <ul>
+                    (ReasonReact.arrayToElement(Js.Array.map(renderAlbum, results.albums)))
+                </ul>
+
+                <h2>(s2e("Tracks"))</h2>
+                <ul>
+                    (ReasonReact.arrayToElement(Js.Array.map(renderTrack, results.tracks)))
+                </ul>
+            </div>
+    };
+
 let make = (_) => {
     ...component,
 
-    render: (_) => {
-        doInitialLoad();
+    render: (self) => {
+        let { ReasonReact.handle } = self;
+
         <div className="foundation">
             <div className="top-bar"> <input _type="text" placeholder="Search" /> </div>
             <div className="center-bar">
                 <div className="left-pane">
                     (s2e("Leftbar"))
                     <a href="#" onClick=logOut> (s2e("Log Out")) </a>
-                    <a href="#" onClick=getUser> (s2e("Get User")) </a>
-                    <p>
-                        <button onClick=testSearch>(s2e("Search"))</button>
-                    </p>
+                    <div>
+                        <button onClick=(handle(testSearch))>(s2e("Search"))</button>
+                        (renderSearchResults(self))
+                    </div>
                 </div>
                 <MainPane />
             </div>
@@ -87,10 +103,10 @@ let make = (_) => {
         </div>
     },
 
-    initialState: () => Initializing,
+    initialState: () => None,
 
     reducer: (action, _) =>
         switch action {
-            | SetUser(user) => ReasonReact.Update(Loaded(user))
+            | SetSearchResults(res) => Update(Some(res))
         }
 };
