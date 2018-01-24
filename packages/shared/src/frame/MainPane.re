@@ -7,7 +7,7 @@ type action =
 
 let component = ReasonReact.reducerComponent("MainPane");
 
-let makeValue = (type d, key: pageKey(d), dynamicProps: d) => {
+let getComponent = (type d, key: pageKey(d), dynamicProps: d) => {
     module InitializedPage = {
         module NewPage = (val PageRegister.getPage(key));
         include NewPage;
@@ -19,7 +19,7 @@ let makeValue = (type d, key: pageKey(d), dynamicProps: d) => {
 
 let makeContext = ({ ReasonReact.reduce }) => {
     Context.navigate: (key, dynamicProps) =>
-        go(reduce, SetPage(makeValue(key, dynamicProps)))
+        go(reduce, SetPage(getComponent(key, dynamicProps)))
 };
 
 let make = (_) => {
@@ -35,7 +35,7 @@ let make = (_) => {
         </div>
     },
 
-    initialState: () => makeValue(HomePage, ()),
+    initialState: () => getComponent(HomePage, ()),
 
     reducer: (action, _) =>
         switch action {

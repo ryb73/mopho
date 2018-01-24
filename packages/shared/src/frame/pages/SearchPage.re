@@ -5,7 +5,6 @@ open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
-type context = Context.t;
 type dynamicProps = string;
 type retainedProps = ReasonReact.noRetainedProps;
 type state = option(Apis.Search_impl.resp);
