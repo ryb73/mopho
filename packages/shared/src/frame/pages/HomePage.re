@@ -5,6 +5,8 @@ open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
+type context = Context.t;
+type dynamicProps = unit;
 type retainedProps = ReasonReact.noRetainedProps;
 type state = option(Apis.Search_impl.resp);
 type action =
@@ -21,29 +23,13 @@ let logOut = (_) => {
     ();
 };
 
-let testSearch = ({ Context.navigate }, _, _) => {
-    module PageChange = {
-        type dynamicProps = SearchPage.dynamicProps;
-        type context = Context.t;
-
-        module type Component = {
-            type retainedProps;
-            type state;
-            type action;
-            let make: (~dynamicProps: dynamicProps, ~context: context, array(unit))
-                => ReasonReact.component(state, retainedProps, action);
-        };
-
-        let component = (module SearchPage : Component);
-        let dynamicProps = "mitski";
-    };
-
-    navigate((module PageChange));
+let testSearch = ({ Context.navigate, getPage }, _, _) => {
+    navv(navigate, getPage(ReactStd.SearchPage), "mitski");
 };
 
 let component = ReasonReact.reducerComponent("HomePage");
 
-let make = (~context, _) => {
+let make = (~dynamicProps as (), ~context, _) => {
     ...component,
 
     render: (self) => {

@@ -5,10 +5,16 @@ open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
+type context = Context.t;
 type dynamicProps = string;
 type retainedProps = ReasonReact.noRetainedProps;
 type state = option(Apis.Search_impl.resp);
 type action = Apis.Search_impl.resp;
+
+let goBack = ({ Context.navigate, getPage }, _) => {
+    navv(navigate, getPage(ReactStd.HomePage), ());
+    ();
+};
 
 let doSearch = ({ ReasonReact.reduce }, query) => {
     Apis.Search.request(config.apiUrl, query)
@@ -33,7 +39,7 @@ let renderTrack = (track) =>
     <li key=(string_of_int(track.Models.Track.id))>(s2e(track.name))</li>;
 
 let component = ReasonReact.reducerComponent("SearchPage");
-let make = (~dynamicProps as query, ~context as _, _) => {
+let make = (~dynamicProps as query, ~context, _) => {
     ...component,
 
     render: (self) => {
@@ -43,6 +49,8 @@ let make = (~dynamicProps as query, ~context as _, _) => {
             | None => doSearch(self, query)
             | Some(results) =>
                 <div>
+                    <button onClick=(goBack(context))>(s2e("back"))</button>
+
                     <h2>(s2e("Artists"))</h2>
                     <ul>
                         (ReasonReact.arrayToElement(Js.Array.map(renderArtist, results.Apis.Search_impl.artists)))

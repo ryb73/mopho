@@ -1,9 +1,11 @@
 open ReactStd;
 
-type state = (module Component);
+/* let s = PageRegister.register((module SearchPage)); */
+
+type state = component;
 
 type action =
-  | SetPage((module Component));
+  | SetPage(component);
 
 let component = ReasonReact.reducerComponent("MainPane");
 
@@ -12,20 +14,15 @@ let make = (_) => {
         ...component,
 
         render: ({ state, reduce }) => {
-            module Page = (val state : Component);
+            module Page = (val state : Component with type context = Context.t);
 
             let context = {
-                Context.navigate: (pageChange) => {
-                    module PageChange = (val pageChange);
-                    module NewPage = {
-                        module PageComponent = (val PageChange.component);
-                        include PageComponent;
-                        let make = make(~dynamicProps=PageChange.dynamicProps);
-                    };
-
-                    go(reduce, SetPage((module NewPage)));
+                Context.navigate: (page) => {
+                    go(reduce, SetPage(page));
                     ();
-                }
+                },
+
+                getPage: PageRegister.getPage
             };
 
             <div className="main-pane">
@@ -33,7 +30,14 @@ let make = (_) => {
             </div>
         },
 
-        initialState: () : state => (module HomePage),
+        initialState: () : state => {
+            module InitializedPage = {
+                include HomePage;
+                let make = make(~dynamicProps=());
+            };
+
+            (module InitializedPage);
+        },
 
         reducer: (action, _) =>
             switch action {
