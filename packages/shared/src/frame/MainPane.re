@@ -1,7 +1,5 @@
 open ReactStd;
 
-/* let s = PageRegister.register((module SearchPage)); */
-
 type state = component;
 
 type action =
@@ -9,39 +7,38 @@ type action =
 
 let component = ReasonReact.reducerComponent("MainPane");
 
-let make = (_) => {
-    {
-        ...component,
-
-        render: ({ state, reduce }) => {
-            module Page = (val state : Component with type context = Context.t);
-
-            let context = {
-                Context.navigate: (page) => {
-                    go(reduce, SetPage(page));
-                    ();
-                },
-
-                getPage: PageRegister.getPage
-            };
-
-            <div className="main-pane">
-                <Page context />
-            </div>
-        },
-
-        initialState: () : state => {
-            module InitializedPage = {
-                include HomePage;
-                let make = make(~dynamicProps=());
-            };
-
-            (module InitializedPage);
-        },
-
-        reducer: (action, _) =>
-            switch action {
-                | SetPage(page) => ReasonReact.Update(page)
-            }
+let makeValue = (type d, key: pageKey(d), dynamicProps: d) => {
+    module InitializedPage = {
+        module NewPage = (val PageRegister.getPage(key));
+        include NewPage;
+        let make = make(~dynamicProps);
     };
+
+    (module InitializedPage : Component);
+};
+
+let makeContext = ({ ReasonReact.reduce }) => {
+    Context.navigate: (key, dynamicProps) =>
+        go(reduce, SetPage(makeValue(key, dynamicProps)))
+};
+
+let make = (_) => {
+    ...component,
+
+    render: (self) => {
+        let { ReasonReact.state } = self;
+
+        module Page = (val state : Component);
+
+        <div className="main-pane">
+            <Page context=(makeContext(self)) />
+        </div>
+    },
+
+    initialState: () => makeValue(HomePage, ()),
+
+    reducer: (action, _) =>
+        switch action {
+            | SetPage(page) => ReasonReact.Update(page)
+        }
 };

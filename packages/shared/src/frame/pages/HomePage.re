@@ -23,8 +23,8 @@ let logOut = (_) => {
     ();
 };
 
-let testSearch = ({ Context.navigate, getPage }, _, _) => {
-    navv(navigate, getPage(ReactStd.SearchPage), "mitski");
+let testSearch = ({ Context.navigate }, _, _) => {
+    navigate(SearchPage, "mitski");
 };
 
 let component = ReasonReact.reducerComponent("HomePage");

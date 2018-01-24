@@ -11,9 +11,8 @@ type retainedProps = ReasonReact.noRetainedProps;
 type state = option(Apis.Search_impl.resp);
 type action = Apis.Search_impl.resp;
 
-let goBack = ({ Context.navigate, getPage }, _) => {
-    navv(navigate, getPage(ReactStd.HomePage), ());
-    ();
+let goBack = ({ Context.navigate }, _) => {
+    navigate(HomePage, ());
 };
 
 let doSearch = ({ ReasonReact.reduce }, query) => {
