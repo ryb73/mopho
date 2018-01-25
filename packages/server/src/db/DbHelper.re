@@ -1,5 +1,6 @@
 open Option.Infix;
 open BatPervasives;
+open Bluebird;
 
 [@autoserialize] type insertResult = { insertId: int };
 
@@ -24,3 +25,6 @@ let getInsertId = ((result, _)) =>
         | Error(_) => Js.Exn.raiseError("Error converting insert result")
         | Ok({insertId}) => insertId
     };
+
+
+let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromise;

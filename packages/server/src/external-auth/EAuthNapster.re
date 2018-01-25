@@ -33,7 +33,7 @@ let getTokensFromCode = (code) => {
 };
 
 let refreshAccessToken = (userId) => {
-    NapsterUser.getRefreshToken(userId)
+    DbNapsterUser.getRefreshToken(userId)
         |> thenMaybe((refreshToken) => {
             Js.Dict.fromList
                 ([

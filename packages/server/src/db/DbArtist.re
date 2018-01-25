@@ -41,7 +41,7 @@ let doQuery = (query) => Mysql.Queryable.query(pool, query) |> fromPromise;
 let _convertDbArtist = ({ id, name, napsterId, metadataSource }) =>
     { Models.Artist.id, name, napsterId, metadataSource };
 
-let createFromNapster = (name: string, napsterId: string) => {
+let createFromNapster = (name, napsterId) => {
     open Insert;
     let napsterId = Some(napsterId);
 
@@ -111,3 +111,10 @@ let setNapsterId = (napsterId, { Models.Artist.id }) => {
         |> doQuery
         |> map(testAffectedRows)
 };
+
+let tryMatchNapster = (name, napsterId) =>
+    findByNapsterId(napsterId)
+        |> then_(fun
+            | Some(v) => resolve(v)
+            | None => createFromNapster(name, napsterId)
+        );

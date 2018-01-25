@@ -67,12 +67,12 @@ Apis.GenerateState.(
 );
 
 let getUserIdFromNapsterMember = ({ BsNapsterApi.Types.Member.id, realName }) =>
-    Db.User.getFromNapsterId(id)
+    DbUser.getFromNapsterId(id)
         |> then_((userId) =>
               switch userId {
                   | None => {
-                      Db.User.create(realName)
-                          |> tap(flip(Db.User.setNapsterId, id))
+                      DbUser.create(realName)
+                          |> tap(flip(DbUser.setNapsterId, id))
                   }
 
                   | Some(userId) => resolve(userId)
@@ -99,11 +99,11 @@ let () = {
             |> tap(Js.log2("2"))
             |> then_(getUserIdFromNapsterMember)
             |> tap(Js.log2("3"))
-            |> tap(flip(Db.User.setNapsterRefreshToken, body.refresh_token))
+            |> tap(flip(DbUser.setNapsterRefreshToken, body.refresh_token))
             |> tap(Js.log2("4"))
             |> tap((_) => setSessionNapsterToken(req, body.access_token))
             |> tap(Js.log2("5"))
-            |> then_(Db.User.generateAuthCode(getIp(req)))
+            |> then_(DbUser.generateAuthCode(getIp(req)))
             |> tap(Js.log2("6"))
     };
 
@@ -130,7 +130,7 @@ let () = {
 };
 
 Apis.LogInWithCode.handle(app, (req, resp, _, code) =>
-    Db.User.useCode(getIp(req), code)
+    DbUser.useCode(getIp(req), code)
         |> map((token) => {
             let expires = momentUtc()
                 |> Moment.add(~duration=duration(55, `years))
@@ -170,6 +170,13 @@ let getNapsterAccessToken = (req, userId) => {
             |> mapMaybe(({ EAuthNapster.access_token }) => access_token);
 };
 
+let runMatcher = (matcher, results) =>
+    results
+        |> Js.Array.map(matcher)
+        |> all
+        |> map(Js.Array.filter(Option.is_some))
+        |> map(Js.Array.map(Option.get));
+
 module Search = Priveleged.Make(Apis.Search);
 Search.handle(app, (req, _, _, query, user) => {
     getNapsterAccessToken(req, user.id)
@@ -184,11 +191,11 @@ Search.handle(app, (req, _, _, query, user) => {
             all3
                 ((
                     data.artists |? [||]
-                        |> Js.Array.map(NapsterSource.matchArtist)
-                        |> all
-                        |> map(Js.Array.filter(Option.is_some))
-                        |> map(Js.Array.map(Option.get)),
-                    resolve([||]),
+                        |> runMatcher(NapsterSource.matchArtist),
+
+                    data.albums |? [||]
+                        |> runMatcher(NapsterSource.matchAlbum),
+
                     resolve([||])
                 ))
                 |> map(((artists, albums, tracks)) => Search.Result({ artists, albums, tracks }));

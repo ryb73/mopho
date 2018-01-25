@@ -21,7 +21,7 @@ module Priveleged = {
                 req
                     |> Request.cookies
                     |> flip(Js.Dict.get, authTokenCookie)
-                    |> mapO(Db.User.getUserFromToken(Std.getIp(req)))
+                    |> mapO(DbUser.getUserFromToken(Std.getIp(req)))
                     |> invertOptional
                     |> mapP(flatten)
                     |> then_((optUser) =>
