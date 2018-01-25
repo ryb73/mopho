@@ -3,6 +3,7 @@ open BsSquel.Params.Infix;
 open Bluebird;
 open BatPervasives;
 module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 let map = BluebirdEx.map;
 
@@ -45,6 +46,8 @@ let createFromNapster = (name, napsterId) => {
     open Insert;
     let napsterId = Some(napsterId);
 
+    Js.log2("Inserting artist from Napster:", name);
+
     Insert.make()
         |> into("artists")
         |> setString("name", name)
@@ -71,8 +74,8 @@ let _parseSingleArtistResult = ((result, _)) => {
         | Ok([| artist |]) => Some(_convertDbArtist(artist))
         | Ok([||]) => None
         | Ok(_) => Js.Exn.raiseError("Multiple matches found")
-        | Error(Some(s)) => Js.Exn.raiseError("Error converting artistsResult: " ++ s)
-        | Error(_) => Js.log2("hmm",result); Js.Exn.raiseError("Error converting artistsResult")
+        | Error(Some(s)) => Js.log(result); Js.Exn.raiseError("Error converting artistsResult: " ++ s)
+        | Error(_) => Js.Exn.raiseError("Error converting artistsResult")
     };
 };
 
@@ -83,7 +86,8 @@ let findByName = (name) => {
         |> where("name = ?" |?. name)
         |> toString
         |> doQuery
-        |> map(_parseSingleArtistResult);
+        |> map(_parseSingleArtistResult)
+        |> tapMaybe(({ Models.Artist.id }) => resolve(Js.log({j|Matched artist $name [$id] by name|j})));
 };
 
 let findByNapsterId = (napsterId) => {
@@ -97,11 +101,14 @@ let findByNapsterId = (napsterId) => {
         |> where("napsterId = ?" |?. json)
         |> toString
         |> doQuery
-        |> map(_parseSingleArtistResult);
+        |> map(_parseSingleArtistResult)
+        |> tapMaybe(({ Models.Artist.id, name }) => resolve(Js.log({j|Matched artist $name [$id] by Napster ID|j})));
 };
 
 let setNapsterId = (napsterId, { Models.Artist.id }) => {
     open Update;
+
+    Js.log2("Setting napster ID for artist ", id);
 
     Update.make()
         |> table("artists")
@@ -112,9 +119,14 @@ let setNapsterId = (napsterId, { Models.Artist.id }) => {
         |> map(testAffectedRows)
 };
 
-let tryMatchNapster = (name, napsterId) =>
+let matchNapster = (name, napsterId) =>
     findByNapsterId(napsterId)
         |> then_(fun
-            | Some(v) => resolve(v)
+            | Some(v) => resolve(Some(v))
+            | None => findByName(name)
+                |> tapMaybe(setNapsterId(Some(napsterId)))
+        )
+        |> then_(fun
+            | Some(a) => resolve(a)
             | None => createFromNapster(name, napsterId)
-        );
+        )

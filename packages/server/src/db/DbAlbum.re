@@ -3,6 +3,7 @@ open BsSquel.Params.Infix;
 open BatPervasives;
 open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
+open BluebirdEx;
 
 let map = BluebirdEx.map;
 
@@ -40,11 +41,12 @@ let _convertDbAlbum = ({ id, name, napsterId, metadataSource, primaryArtistId })
 let createFromNapster = (album) => {
     let { BsNapsterApi.Types.Album.name, id: napsterId } = album;
 
-    open Insert;
+    Js.log4("Inserting album from Napster:", album.artistName, {j|–|j}, name);
+
     let napsterId = Some(napsterId);
 
-    DbArtist.tryMatchNapster(album.artistName, album.contributingArtists.primaryArtist)
-        |> then_(({ Models.Artist.id: primaryArtistId }) =>
+    DbArtist.matchNapster(album.artistName, album.contributingArtists.primaryArtist)
+        |> then_(({ Models.Artist.id: primaryArtistId }) => Insert.(
             Insert.make()
                 |> into("albums")
                 |> setString("name", name)
@@ -59,7 +61,7 @@ let createFromNapster = (album) => {
                     Models.Album.id, name, napsterId, primaryArtistId,
                     metadataSource: Models.Napster
                 })
-        );
+        ));
 };
 
 let _selectAlbumFields = Select.(
@@ -78,14 +80,16 @@ let _parseSingleAlbumResult = ((result, _)) => {
     };
 };
 
-let findByName = (name) => {
+let findByNameAndArtist = (name, artistId) => {
     open Select;
 
     _selectAlbumFields()
         |> where("name = ?" |?. name)
+        |> where("primaryArtistId = ?" |?. artistId)
         |> toString
         |> DbHelper.doQuery
-        |> map(_parseSingleAlbumResult);
+        |> map(_parseSingleAlbumResult)
+        |> tapMaybe(({ Models.Album.id }) => resolve(Js.log({j|Matched album $name [$id] by artist|j})));
 };
 
 let findByNapsterId = (napsterId) => {
@@ -99,11 +103,14 @@ let findByNapsterId = (napsterId) => {
         |> where("napsterId = ?" |?. json)
         |> toString
         |> DbHelper.doQuery
-        |> map(_parseSingleAlbumResult);
+        |> map(_parseSingleAlbumResult)
+        |> tapMaybe(({ Models.Album.id, name }) => resolve(Js.log({j|Matched album $name [$id] by Napster ID|j})));
 };
 
 let setNapsterId = (napsterId, { Models.Album.id }) => {
     open Update;
+
+    Js.log2("Setting napster ID for album ", id);
 
     Update.make()
         |> table("albums")
@@ -112,4 +119,23 @@ let setNapsterId = (napsterId, { Models.Album.id }) => {
         |> toString
         |> DbHelper.doQuery
         |> map(DbHelper.testAffectedRows)
+};
+
+let matchNapster = (album) => {
+    let { BsNapsterApi.Types.Album.id: napsterId, name } = album;
+
+    findByNapsterId(napsterId)
+        |> then_(fun
+            | Some(a) => resolve(Some(a))
+            | None =>
+                DbArtist.matchNapster(album.artistName, album.contributingArtists.primaryArtist)
+                    |> then_(({ Models.Artist.id: primaryArtistId }) =>
+                        findByNameAndArtist(primaryArtistId, name)
+                    )
+                    |> tapMaybe(setNapsterId(Some(napsterId)))
+        )
+        |> then_(fun
+            | Some(a) => resolve(a)
+            | None => createFromNapster(album)
+        );
 };

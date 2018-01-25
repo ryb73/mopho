@@ -173,9 +173,7 @@ let getNapsterAccessToken = (req, userId) => {
 let runMatcher = (matcher, results) =>
     results
         |> Js.Array.map(matcher)
-        |> all
-        |> map(Js.Array.filter(Option.is_some))
-        |> map(Js.Array.map(Option.get));
+        |> all;
 
 module Search = Priveleged.Make(Apis.Search);
 Search.handle(app, (req, _, _, query, user) => {
@@ -191,10 +189,10 @@ Search.handle(app, (req, _, _, query, user) => {
             all3
                 ((
                     data.artists |? [||]
-                        |> runMatcher(NapsterSource.matchArtist),
+                        |> runMatcher(({ BsNapsterApi.Types.Artist.id: napsterId, name }) => DbArtist.matchNapster(name, napsterId)),
 
                     data.albums |? [||]
-                        |> runMatcher(NapsterSource.matchAlbum),
+                        |> runMatcher(DbAlbum.matchNapster),
 
                     resolve([||])
                 ))
