@@ -192,9 +192,17 @@ Search.handle(app, (req, _, _, query, user) => {
                         |> runMatcher(({ BsNapsterApi.Types.Artist.id: napsterId, name }) => DbArtist.matchNapster(name, napsterId)),
 
                     data.albums |? [||]
-                        |> runMatcher(DbAlbum.matchNapster),
+                        |> runMatcher(
+                            ({
+                                BsNapsterApi.Types.Album.id: napsterId,
+                                name,
+                                artistName: primaryArtistName,
+                                contributingArtists: { primaryArtist: primaryArtistId } }
+                            ) => DbAlbum.matchNapster(name, napsterId, primaryArtistName, primaryArtistId)
+                        ),
 
-                    resolve([||])
+                    data.tracks |? [||]
+                        |> runMatcher(DbTrack.matchNapster)
                 ))
                 |> map(((artists, albums, tracks)) => Search.Result({ artists, albums, tracks }));
         })

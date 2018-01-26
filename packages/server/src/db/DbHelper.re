@@ -1,6 +1,7 @@
 open Option.Infix;
 open BatPervasives;
 open Bluebird;
+open BsSquel;
 
 [@autoserialize] type insertResult = { insertId: int };
 
@@ -26,5 +27,10 @@ let getInsertId = ((result, _)) =>
         | Ok({insertId}) => insertId
     };
 
-
 let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromise;
+
+let selectAll = (table) => Select.(
+    Select.make()
+        |> from(table)
+        |> field("*")
+);

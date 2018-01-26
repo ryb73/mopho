@@ -37,7 +37,11 @@ module Track = {
     [@autoserialize]
     type t = {
         id: int,
-        name: string
+        name: string,
+        napsterId: option(string),
+        metadataSource: metadataSource,
+        albumId: int,
+        primaryArtistId: int
     };
 };
 

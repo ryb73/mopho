@@ -5,12 +5,11 @@ open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
-let map = BluebirdEx.map;
-
-[@autoserialize] type album = {
+[@autoserialize] type track = {
     id: int,
     name: string,
     primaryArtistId: int,
+    albumId: int,
     napsterId: [@autoserialize.custom (
         option__to_json(string__to_json)
             %> Js.Json.stringify
@@ -33,15 +32,15 @@ let map = BluebirdEx.map;
     )] Models.metadataSource
 };
 
-[@autoserialize] type albumsResult = array(album);
+[@autoserialize] type tracksResult = array(track);
 
-let _convertDbAlbum = ({ id, name, napsterId, metadataSource, primaryArtistId }) =>
-    { Models.Album.id, name, napsterId, metadataSource, primaryArtistId };
+let _convertDbTrack = ({ id, name, napsterId, metadataSource, primaryArtistId, albumId }) =>
+    { Models.Track.id, name, napsterId, metadataSource, primaryArtistId, albumId };
 
-let createFromNapster = (~name, ~napsterId, ~primaryArtist) => {
+let createFromNapster = (~name, ~napsterId, ~primaryArtist, ~album) => {
     open Insert;
 
-    Js.log4("Inserting album from Napster:", primaryArtist.Models.Artist.name, {j|–|j}, name);
+    Js.log4("Inserting track from Napster:", primaryArtist.Models.Artist.name, {j|–|j}, name);
 
     let napsterId = Some(napsterId);
 
@@ -52,19 +51,21 @@ let createFromNapster = (~name, ~napsterId, ~primaryArtist) => {
         |> setString("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
         |> setString("createdUtc", Std.getCurrentUtc())
         |> setInt("primaryArtistId", primaryArtist.id)
+        |> setInt("albumId", album.Models.Album.id)
         |> toString
         |> DbHelper.doQuery
         |> map(DbHelper.getInsertId)
         |> map(id => {
-            Models.Album.id, name, napsterId,
+            Models.Track.id, name, napsterId,
             primaryArtistId: primaryArtist.id,
+            albumId: album.id,
             metadataSource: Models.Napster
         });
 };
 
-let _parseSingleAlbumResult = ((result, _)) => {
-    switch (albumsResult__from_json(result)) {
-        | Ok([| artist |]) => Some(_convertDbAlbum(artist))
+let _parseSingleTrackResult = ((result, _)) => {
+    switch (tracksResult__from_json(result)) {
+        | Ok([| artist |]) => Some(_convertDbTrack(artist))
         | Ok([||]) => None
         | Ok(_) => Js.Exn.raiseError("Multiple matches found")
         | Error(Some(s)) => Js.Exn.raiseError("Error converting albumsResult: " ++ s)
@@ -75,13 +76,15 @@ let _parseSingleAlbumResult = ((result, _)) => {
 let findByNameAndArtist = (name, primaryArtist) => {
     open Select;
 
-    DbHelper.selectAll("albums")
+    let { Models.Artist.id: primaryArtistId, name: primaryArtistName } = primaryArtist;
+
+    DbHelper.selectAll("tracks")
         |> where("name = ?" |?. name)
-        |> where("primaryArtistId = ?" |?. primaryArtist.Models.Artist.id)
+        |> where("primaryArtistId = ?" |?. primaryArtistId)
         |> toString
         |> DbHelper.doQuery
-        |> map(_parseSingleAlbumResult)
-        |> tapMaybe(({ Models.Album.id }) => resolve(Js.log({j|Matched album $name [$id] by artist|j})));
+        |> map(_parseSingleTrackResult)
+        |> tapMaybe(({ Models.Track.id }) => resolve(Js.log({j|Matched track $name [$id] by artist ($primaryArtistName [$primaryArtistId])|j})));
 };
 
 let findByNapsterId = (napsterId) => {
@@ -91,21 +94,21 @@ let findByNapsterId = (napsterId) => {
         |> option__to_json(string__to_json)
         |> Js.Json.stringify;
 
-    DbHelper.selectAll("albums")
+    DbHelper.selectAll("tracks")
         |> where("napsterId = ?" |?. json)
         |> toString
         |> DbHelper.doQuery
-        |> map(_parseSingleAlbumResult)
-        |> tapMaybe(({ Models.Album.id, name }) => resolve(Js.log({j|Matched album $name [$id] by Napster ID|j})));
+        |> map(_parseSingleTrackResult)
+        |> tapMaybe(({ Models.Track.id, name }) => resolve(Js.log({j|Matched track $name [$id] by Napster ID|j})));
 };
 
-let setNapsterId = (napsterId, { Models.Album.id }) => {
+let setNapsterId = (napsterId, { Models.Track.id }) => {
     open Update;
 
-    Js.log2("Setting napster ID for album ", id);
+    Js.log2("Setting napster ID for track ", id);
 
     Update.make()
-        |> table("albums")
+        |> table("tracks")
         |> setString("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
         |> where("id = ?" |?. id)
         |> toString
@@ -113,18 +116,23 @@ let setNapsterId = (napsterId, { Models.Album.id }) => {
         |> map(DbHelper.testAffectedRows)
 };
 
-let matchNapster = (name, napsterId, artistName, primaryArtistNapsterId) => {
+let matchNapster = (track) => {
+    let { BsNapsterApi.Types.Track.id: napsterId, name } = track;
+
     findByNapsterId(napsterId)
         |> then_(fun
             | Some(a) => resolve(a)
             | None =>
-                DbArtist.matchNapster(artistName, primaryArtistNapsterId)
-                    |> then_((primaryArtist) =>
+                DbArtist.matchNapster(track.artistName, track.artistId)
+                    |> then_(primaryArtist =>
                         findByNameAndArtist(name, primaryArtist)
                             |> tapMaybe(setNapsterId(Some(napsterId)))
                             |> then_(fun
                                 | Some(a) => resolve(a)
-                                | None => createFromNapster(~name, ~napsterId, ~primaryArtist)
+                                | None => DbAlbum.matchNapster(track.albumName, track.albumId, track.artistName, track.artistId)
+                                    |> then_((album) => createFromNapster(
+                                        ~name, ~napsterId, ~primaryArtist, ~album
+                                    ))
                             )
                     )
         );
