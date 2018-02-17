@@ -1,5 +1,5 @@
-open BsSquel;
-open BsSquel.Params.Infix;
+open BsKnex;
+open BsKnex.Params.Infix;
 open BatPervasives;
 open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
@@ -46,14 +46,14 @@ let createFromNapster = (~name, ~napsterId, ~primaryArtist, ~album) => {
 
     let napsterId = Some(napsterId);
 
-    Insert.make()
-        |> into("albums")
-        |> setString("name", name)
-        |> setString("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
-        |> setString("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
-        |> setString("createdUtc", Std.getCurrentUtc())
-        |> setInt("primaryArtistId", primaryArtist.id)
-        |> setInt("albumId", album.Models.Album.id)
+    Insert.make(DbHelper.knex)
+        |> into("tracks")
+        |> set("name", name)
+        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
+        |> set("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
+        |> set("createdUtc", Std.getCurrentUtc())
+        |> set("primaryArtistId", primaryArtist.id)
+        |> set("albumId", album.Models.Album.id)
         |> toString
         |> DbHelper.doQuery
         |> map(DbHelper.getInsertId)
@@ -81,8 +81,8 @@ let findByNameAndArtist = (name, primaryArtist) => {
     let { Models.Artist.id: primaryArtistId, name: primaryArtistName } = primaryArtist;
 
     DbHelper.selectAll("tracks")
-        |> where("name = ?" |?. name)
-        |> where("primaryArtistId = ?" |?. primaryArtistId)
+        |> whereParam("name = ?", ?? name)
+        |> whereParam("primaryArtistId = ?", ?? primaryArtistId)
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleTrackResult)
@@ -97,7 +97,7 @@ let findByNapsterId = (napsterId) => {
         |> Js.Json.stringify;
 
     DbHelper.selectAll("tracks")
-        |> where("napsterId = ?" |?. json)
+        |> whereParam("napsterId = ?", ?? json)
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleTrackResult)
@@ -109,10 +109,9 @@ let setNapsterId = (napsterId, { Models.Track.id }) => {
 
     Js.log2("Setting napster ID for track ", id);
 
-    Update.make()
-        |> table("tracks")
-        |> setString("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
-        |> where("id = ?" |?. id)
+    Update.make("tracks", DbHelper.knex)
+        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
+        |> whereParam("id = ?", ?? id)
         |> toString
         |> DbHelper.doQuery
         |> map(DbHelper.testAffectedRows)

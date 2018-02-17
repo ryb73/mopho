@@ -1,5 +1,5 @@
-open BsSquel;
-open BsSquel.Params.Infix;
+open BsKnex;
+open BsKnex.Params.Infix;
 open BatPervasives;
 open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
@@ -45,13 +45,13 @@ let createFromNapster = (~name, ~napsterId, ~primaryArtist) => {
 
     let napsterId = Some(napsterId);
 
-    Insert.make()
+    Insert.make(DbHelper.knex)
         |> into("albums")
-        |> setString("name", name)
-        |> setString("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
-        |> setString("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
-        |> setString("createdUtc", Std.getCurrentUtc())
-        |> setInt("primaryArtistId", primaryArtist.id)
+        |> set("name", name)
+        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
+        |> set("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
+        |> set("createdUtc", Std.getCurrentUtc())
+        |> set("primaryArtistId", primaryArtist.id)
         |> toString
         |> DbHelper.doQuery
         |> map(DbHelper.getInsertId)
@@ -76,8 +76,8 @@ let findByNameAndArtist = (name, primaryArtist) => {
     open Select;
 
     DbHelper.selectAll("albums")
-        |> where("name = ?" |?. name)
-        |> where("primaryArtistId = ?" |?. primaryArtist.Models.Artist.id)
+        |> whereParam("name = ?", ?? name)
+        |> whereParam("primaryArtistId = ?", ?? primaryArtist.Models.Artist.id)
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleAlbumResult)
@@ -92,7 +92,7 @@ let findByNapsterId = (napsterId) => {
         |> Js.Json.stringify;
 
     DbHelper.selectAll("albums")
-        |> where("napsterId = ?" |?. json)
+        |> whereParam("napsterId = ?", ?? json)
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleAlbumResult)
@@ -102,12 +102,11 @@ let findByNapsterId = (napsterId) => {
 let setNapsterId = (napsterId, { Models.Album.id }) => {
     open Update;
 
-    Js.log2("Setting napster ID for album ", id);
+    Js.log2("Setting napster ID for album", id);
 
-    Update.make()
-        |> table("albums")
-        |> setString("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
-        |> where("id = ?" |?. id)
+    Update.make("albums", DbHelper.knex)
+        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
+        |> whereParam("id = ?", ?? id)
         |> toString
         |> DbHelper.doQuery
         |> map(DbHelper.testAffectedRows)
