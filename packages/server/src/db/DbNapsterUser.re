@@ -1,10 +1,9 @@
-open BsSquel;
-open BsSquel.Params.Infix;
+open BsKnex;
+open BsKnex.Params.Infix;
 open Bluebird;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
-
 
 let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromise;
 
@@ -13,10 +12,10 @@ let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromis
 let getRefreshToken = (userId : Models.User.id) => {
     open Select;
 
-    Select.make()
+    Select.make(DbHelper.knex)
         |> from("napster_users")
-        |> field("refreshToken")
-        |> where("userId = ?" |?. userId)
+        |> column("refreshToken")
+        |> whereParam("userId = ?", ?? userId)
         |> toString
         |> doQuery
         |> map(((result, _)) => {

@@ -1,7 +1,9 @@
 open Option.Infix;
 open BatPervasives;
 open Bluebird;
-open BsSquel;
+open BsKnex;
+
+let knex = Core.make("mysql");
 
 [@autoserialize] type insertResult = { insertId: int };
 
@@ -30,7 +32,7 @@ let getInsertId = ((result, _)) =>
 let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromise;
 
 let selectAll = (table) => Select.(
-    Select.make()
+    Select.make(knex)
         |> from(table)
-        |> field("*")
+        |> column("*")
 );

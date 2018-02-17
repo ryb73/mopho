@@ -16,7 +16,7 @@
         "bs-body-parser",
         "bs-scrypt",
         "bs-mysql",
-        "bs-squel",
+        "bs-knex",
         "bs-result-ex",
         "bs-bluebird"
     ],

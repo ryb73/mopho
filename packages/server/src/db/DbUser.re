@@ -1,8 +1,8 @@
 open Bluebird;
 open Js.Result;
 open ResultEx;
-open BsSquel;
-open BsSquel.Params.Infix;
+open BsKnex;
+open BsKnex.Params.Infix;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
@@ -18,10 +18,10 @@ let doQuery = (query) => Mysql.Queryable.query(pool, query) |> fromPromise;
 let setNapsterId = (userId: int, napsterId: string) => {
     open Insert;
 
-    Insert.make()
+    Insert.make(DbHelper.knex)
         |> into("napster_users")
-        |> setInt("userId", userId)
-        |> setString("napsterUserId", napsterId)
+        |> set("userId", userId)
+        |> set("napsterUserId", napsterId)
         |> toString
         |> doQuery
         |> map((_) => ());
@@ -30,9 +30,9 @@ let setNapsterId = (userId: int, napsterId: string) => {
 let create = (name: string) => {
     open Insert;
 
-    Insert.make()
+    Insert.make(DbHelper.knex)
         |> into("users")
-        |> setString("name", name)
+        |> set("name", name)
         |> toString
         |> doQuery
         |> map(DbHelper.getInsertId)
@@ -44,10 +44,10 @@ let create = (name: string) => {
 let getFromNapsterId = (napsterId: string) => {
     open Select;
 
-    Select.make()
+    Select.make(DbHelper.knex)
         |> from("napster_users")
-        |> field("userId")
-        |> where("napsterUserId = ?" |?. napsterId)
+        |> column("userId")
+        |> whereParam("napsterUserId = ?", ?? napsterId)
         |> toString
         |> doQuery
         |> map(((result, _)) =>
@@ -67,10 +67,9 @@ let getFromNapsterId = (napsterId: string) => {
 let setNapsterRefreshToken = (userId: int, refreshToken: string) => {
     open Update;
 
-    Update.make()
-        |> table("napster_users")
-        |> setString("refreshToken", refreshToken)
-        |> where("userId = ?" |?. userId)
+    Update.make("napster_users", DbHelper.knex)
+        |> set("refreshToken", refreshToken)
+        |> whereParam("userId = ?", ?? userId)
         |> toString
         |> doQuery
         |> map(testAffectedRows);
@@ -92,11 +91,11 @@ let _generateAndHash = (salt) =>
 let generateAuthCode = (salt, userId: int) => Insert.(
     _generateAndHash(salt)
         |> then_(((code, hash)) => {
-            Insert.make()
+            Insert.make(DbHelper.knex)
                 |> into("auth_codes")
-                |> setInt("userId", userId)
-                |> setString("authCodeHash", hash)
-                |> setString("createdUtc", Std.getCurrentUtc())
+                |> set("userId", userId)
+                |> set("authCodeHash", hash)
+                |> set("createdUtc", Std.getCurrentUtc())
                 |> toString
                 |> doQuery
                 |> thenResolve(code);
@@ -106,9 +105,8 @@ let generateAuthCode = (salt, userId: int) => Insert.(
 let _deleteHash = (hash: string) => {
     open Delete;
 
-    Delete.make()
-        |> from("auth_codes")
-        |> where("authCodeHash = ?" |?. hash)
+    Delete.make("auth_codes", DbHelper.knex)
+        |> whereParam("authCodeHash = ?", ?? hash)
         |> toString
         |> doQuery;
 };
@@ -116,11 +114,11 @@ let _deleteHash = (hash: string) => {
 let _createAuthToken = (salt, userId: int) => Insert.(
     _generateAndHash(salt)
         |> then_(((token, hash)) =>
-            Insert.make()
+            Insert.make(DbHelper.knex)
                 |> into("auth_tokens")
-                |> setInt("userId", userId)
-                |> setString("tokenHash", hash)
-                |> setString("createdUtc", Std.getCurrentUtc())
+                |> set("userId", userId)
+                |> set("tokenHash", hash)
+                |> set("createdUtc", Std.getCurrentUtc())
                 |> toString
                 |> doQuery
                 |> tap(testAffectedRows)
@@ -131,10 +129,10 @@ let _createAuthToken = (salt, userId: int) => Insert.(
 let useCode = (salt, code: string) =>
     Std.secureHash(salt, code)
         |> then_((hash) => Select.(
-            Select.make()
+            Select.make(DbHelper.knex)
                 |> from("auth_codes")
-                |> field("userId")
-                |> where("authCodeHash = ?" |?. hash)
+                |> column("userId")
+                |> whereParam("authCodeHash = ?", ?? hash)
                 |> toString
                 |> doQuery
                 |> map(((result, _)) =>
@@ -152,11 +150,11 @@ let useCode = (salt, code: string) =>
 let getUserFromToken = (salt, token: string) =>
     Std.secureHash(salt, token)
         |> map((hash) => Select.(
-            Select.make()
+            Select.make(DbHelper.knex)
                 |> from(~alias="at", "auth_tokens")
-                |> join(~alias="u", "users", "u.id = at.userId")
-                |> field("u.*")
-                |> where("at.tokenHash = ?" |?. hash)
+                |> innerJoin("users as u", "u.id", "=", "at.userId")
+                |> column("u.*")
+                |> whereParam("at.tokenHash = ?", ?? hash)
                 |> toString
         ))
         |> then_(doQuery)
