@@ -5,6 +5,8 @@ open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
+let map = BluebirdEx.map;
+
 [@autoserialize] type track = {
     id: int,
     name: string,
