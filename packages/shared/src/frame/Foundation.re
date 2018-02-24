@@ -1,12 +1,24 @@
 open ReactStd;
 
-NapsterPlayer.on(Error, (error) => Js.log2("Error:", error));
+/* NapsterPlayer.on(Error, (error) => Js.log2("Error:", error)); */
 
-let component = ReasonReact.statelessComponent("Foundation");
+type state = {
+    currentTrack: option(Models.Track.id)
+};
+
+type action =
+    | SetTrack(Models.Track.id);
+
+let playTrack = ({ ReasonReact.reduce }, trackId) =>
+    go(reduce, SetTrack(trackId));
+
+let component = ReasonReact.reducerComponent("Foundation");
 let make = (_) => {
     ...component,
 
-    render: (_) => {
+    render: (self) => {
+        let {  ReasonReact.state: { currentTrack } } = self;
+
         <div className="foundation">
             <div className="top-bar"> <input _type="text" placeholder="Search" /> </div>
             <div className="center-bar">
@@ -14,10 +26,18 @@ let make = (_) => {
                     (s2e("Leftbar"))
                 </div>
 
-                <MainPane />
+                <MainPane playTrack={playTrack(self)} />
             </div>
-            <div className="bottom-bar"> (s2e("Bottom")) </div>
-        </div>
-    }
 
+            <BottomBar currentTrack />
+        </div>
+    },
+
+    initialState: () => { currentTrack: None },
+
+    reducer: (action, _) => {
+        switch action {
+            | SetTrack(id) => ReasonReact.Update({ currentTrack: Some(id) })
+        };
+    }
 };

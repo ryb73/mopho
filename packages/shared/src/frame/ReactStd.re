@@ -4,7 +4,8 @@ type pageKey('a) =
 
 module Context = {
     type t = {
-        navigate: 'a. (pageKey('a), 'a) => unit
+        navigate: 'a. (pageKey('a), 'a) => unit,
+        playTrack: Models.Track.id => unit
     };
 };
 

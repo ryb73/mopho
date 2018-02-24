@@ -1,11 +1,13 @@
 open ReactStd;
 
-type state = component;
+type state = {
+    currentPage: component,
+    currentTrack: option(Models.Track.id)
+};
 
 type action =
-  | SetPage(component);
-
-let component = ReasonReact.reducerComponent("MainPane");
+  | SetPage(component)
+  | SetTrack(Models.Track.id);
 
 let getComponent = (type d, key: pageKey(d), dynamicProps: d) => {
     module InitializedPage = {
@@ -17,28 +19,35 @@ let getComponent = (type d, key: pageKey(d), dynamicProps: d) => {
     (module InitializedPage : Component);
 };
 
-let makeContext = ({ ReasonReact.reduce }) => {
-    Context.navigate: (key, dynamicProps) =>
-        go(reduce, SetPage(getComponent(key, dynamicProps)))
+let makeContext = ({ ReasonReact.reduce }, playTrack) => {
+    Context.playTrack,
+
+    navigate: (key, dynamicProps) =>
+        go(reduce, SetPage(getComponent(key, dynamicProps))),
 };
 
-let make = (_) => {
+let component = ReasonReact.reducerComponent("MainPane");
+let make = (~playTrack, _) => {
     ...component,
 
     render: (self) => {
-        let { ReasonReact.state } = self;
+        let { ReasonReact.state: { currentPage } } = self;
 
-        module Page = (val state : Component);
+        module Page = (val currentPage : Component);
 
         <div className="main-pane">
-            <Page context=(makeContext(self)) />
+            <Page context=(makeContext(self, playTrack)) />
         </div>
     },
 
-    initialState: () => getComponent(HomePage, ()),
+    initialState: () => {
+        currentPage: getComponent(HomePage, ()),
+        currentTrack: None
+    },
 
-    reducer: (action, _) =>
+    reducer: (action, state) =>
         switch action {
-            | SetPage(page) => ReasonReact.Update(page)
+            | SetPage(page) => ReasonReact.Update({ ...state, currentPage: page })
+            | SetTrack(id) => ReasonReact.Update({ ...state, currentTrack: Some(id) })
         }
 };

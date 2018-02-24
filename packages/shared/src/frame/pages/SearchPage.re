@@ -27,14 +27,24 @@ let doSearch = ({ ReasonReact.reduce }, query) => {
     </span>
 };
 
-let renderArtist = (artist) =>
-    <li key=(string_of_int(artist.Models.Artist.id))>(s2e(artist.name))</li>;
+let renderArtist = ({ Models.Artist.id, name }) =>
+    <li key=(string_of_int(id))>
+        (s2e({j|$id – $name|j}))
+    </li>;
 
-let renderAlbum = (album) =>
-    <li key=(string_of_int(album.Models.Album.id))>(s2e(album.name))</li>;
+let renderAlbum = ({ Models.Album.id, name, primaryArtistId}) =>
+    <li key=(string_of_int(id))>
+        (s2e({j|$id – $name ($primaryArtistId)|j}))
+    </li>;
 
-let renderTrack = (track) =>
-    <li key=(string_of_int(track.Models.Track.id))>(s2e(track.name))</li>;
+let renderTrack = (
+    { Context.playTrack }, { Models.Track.id, name, primaryArtistId, albumId }
+) =>
+    <li key=(string_of_int(id))>
+        <a href="#" onClick={(_) => playTrack(id)}>
+            (s2e({j|$id – $name ($primaryArtistId – $albumId)|j}))
+        </a>
+    </li>;
 
 let component = ReasonReact.reducerComponent("SearchPage");
 let make = (~dynamicProps as query, ~context, _) => {
@@ -61,7 +71,7 @@ let make = (~dynamicProps as query, ~context, _) => {
 
                     <h2>(s2e("Tracks"))</h2>
                     <ul>
-                        (ReasonReact.arrayToElement(Js.Array.map(renderTrack, results.tracks)))
+                        (ReasonReact.arrayToElement(Js.Array.map(renderTrack(context), results.tracks)))
                     </ul>
                 </div>
         };
