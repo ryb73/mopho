@@ -107,7 +107,7 @@ let findByNapsterId = (napsterId) => {
 let setNapsterId = (napsterId, { Models.Track.id }) => {
     open Update;
 
-    Js.log2("Setting napster ID for track ", id);
+    Js.log2("Setting napster ID for track", id);
 
     Update.make("tracks", DbHelper.knex)
         |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))

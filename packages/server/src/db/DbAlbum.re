@@ -78,6 +78,7 @@ let findByNameAndArtist = (name, primaryArtist) => {
     DbHelper.selectAll("albums")
         |> whereParam("name = ?", ?? name)
         |> whereParam("primaryArtistId = ?", ?? primaryArtist.Models.Artist.id)
+        |> whereParam("napsterId = ?", ?? option__to_json((_) => Js.Json.null, None)) /* TODO: this'll have to be generalized */
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleAlbumResult)
@@ -99,10 +100,10 @@ let findByNapsterId = (napsterId) => {
         |> tapMaybe(({ Models.Album.id, name }) => resolve(Js.log({j|Matched album $name [$id] by Napster ID|j})));
 };
 
-let setNapsterId = (napsterId, { Models.Album.id }) => {
+let setNapsterId = (napsterId, { Models.Album.id, name }) => {
     open Update;
 
-    Js.log2("Setting napster ID for album", id);
+    Js.log3("Setting napster ID for album", id, name);
 
     Update.make("albums", DbHelper.knex)
         |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))

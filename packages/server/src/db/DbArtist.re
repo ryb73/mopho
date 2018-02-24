@@ -42,27 +42,6 @@ let doQuery = (query) => Mysql.Queryable.query(pool, query) |> fromPromise;
 let _convertDbArtist = ({ id, name, napsterId, metadataSource }) =>
     { Models.Artist.id, name, napsterId, metadataSource };
 
-let createFromNapster = (name, napsterId) => {
-    open Insert;
-    let napsterId = Some(napsterId);
-
-    Js.log2("Inserting artist from Napster:", name);
-
-    Insert.make(DbHelper.knex)
-        |> into("artists")
-        |> set("name", name)
-        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
-        |> set("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
-        |> set("createdUtc", Std.getCurrentUtc())
-        |> toString
-        |> doQuery
-        |> map(DbHelper.getInsertId)
-        |> map(id => {
-            Models.Artist.id, name, napsterId,
-            metadataSource: Models.Napster
-        });
-};
-
 let _selectArtistFields = () => Select.(
     Select.make(DbHelper.knex)
         |> from("artists")
@@ -89,7 +68,15 @@ let findByName = (name) => {
         |> toString
         |> doQuery
         |> map(_parseSingleArtistResult)
-        |> tapMaybe(({ Models.Artist.id }) => resolve(Js.log({j|Matched artist $name [$id] by name|j})));
+        |> tapMaybe(({ Models.Artist.id }) => resolve(Js.log({j|Matched artist $name [$id] by name|j})))
+        /* |> map((v) => {
+            switch v {
+                | None => Js.log({j|No match: $name|j})
+                | _ => ()
+            };
+
+            v;
+        }) */
 };
 
 let findByNapsterId = (napsterId) => {
@@ -107,10 +94,45 @@ let findByNapsterId = (napsterId) => {
         |> tapMaybe(({ Models.Artist.id, name }) => resolve(Js.log({j|Matched artist $name [$id] by Napster ID|j})));
 };
 
+let createFromNapster = (name, napsterId) => {
+    open Insert;
+
+    Js.log2("Inserting artist from Napster:", name);
+
+    Insert.make(DbHelper.knex)
+        |> into("artists")
+        |> set("name", name)
+        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, Some(napsterId))))
+        |> set("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
+        |> set("createdUtc", Std.getCurrentUtc())
+        |> toString
+        |> Js.String.replaceByRe([%bs.re "/^insert/i"], "insert ignore")
+        |> doQuery
+        |> map(DbHelper.getInsertId)
+        |> then_(id => {
+            /* If insert failed, id will be 0. This can happen if the artist was already inserted */
+            if(id === 0) {
+                findByNapsterId(napsterId)
+                    |> map(result => {
+                        switch result {
+                            | None => failwith({j|Error in createFromNapster: $name, $napsterId|j})
+                            | Some(r) => r
+                        };
+                    });
+            } else {
+                resolve({
+                    Models.Artist.id, name,
+                    napsterId: Some(napsterId),
+                    metadataSource: Models.Napster
+                });
+            };
+        });
+};
+
 let setNapsterId = (napsterId, { Models.Artist.id }) => {
     open Update;
 
-    Js.log2("Setting napster ID for artist ", id);
+    Js.log2("Setting napster ID for artist", id);
 
     Update.make("artists", DbHelper.knex)
         |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
