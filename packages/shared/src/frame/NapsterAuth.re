@@ -13,14 +13,6 @@ module QsParser = Qs.MakeParser({
     };
 });
 
-let napsterReady = make((~resolve, ~reject as _) => {
-    NapsterPlayer.init(config.napsterApiKey, "v2.2");
-    NapsterPlayer.on(Ready, (d) => {
-        Js.log2("ready!", d);
-        resolve();
-    });
-});
-
 let getAuthUrl = (apiState) => {
     "https://api.napster.com/oauth/authorize?client_id="
         ++ config.napsterApiKey
@@ -55,14 +47,11 @@ let qs = ReDom.location
     |> Js.String.substr(~from=1)
     |> QsParser.parse;
 
-let promise =
-    switch (Js.Undefined.to_opt(qs##code), Js.Undefined.to_opt(qs##state)) {
-        | (Some(code), Some(state)) => getMophoCode(code, state)
-        | _ => beginAuth()
-    };
-
-promise
-    |> catch((exn) => {
-        Js.log2("Error in NapsterAuth: ", exn);
-        resolve();
-    });
+switch (Js.Undefined.to_opt(qs##code), Js.Undefined.to_opt(qs##state)) {
+    | (Some(code), Some(state)) => getMophoCode(code, state)
+    | _ => beginAuth()
+}
+|> catch((exn) => {
+    Js.log2("Error in NapsterAuth: ", exn);
+    resolve();
+});

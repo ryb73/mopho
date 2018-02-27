@@ -1,4 +1,10 @@
 open ReactStd;
+open Option;
+
+let renderNapsterPlayer = (track) => {
+    let napsterId = bind(track, ({ Models.Track.napsterId }) => napsterId);
+    <Player playerUrl="napster-player-adapter.html" trackId=?napsterId />;
+};
 
 let component = ReasonReact.statelessComponent("BottomBar");
 let make = (~currentTrack, _) => {
@@ -8,8 +14,9 @@ let make = (~currentTrack, _) => {
         <div className="bottom-bar">
             (switch (currentTrack) {
                 | None => s2e("Nothing playing")
-                | Some(id) => s2e({j|Playing $id|j})
+                | Some({ Models.Track.napsterId }) => s2e({j|Playing $napsterId|j})
             })
+            (renderNapsterPlayer(currentTrack))
         </div>
     }
 };

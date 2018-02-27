@@ -21,6 +21,7 @@ module.exports = {
     entry: {
         index: rel("lib/js/src/frame/index.js"),
         "napster-auth": rel("lib/js/src/frame/NapsterAuth.js"),
+        "napster-player-adapter": rel("lib/js/src/frame/NapsterPlayerAdapter.js"),
     },
 
     output: {

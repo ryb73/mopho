@@ -3,11 +3,11 @@ open ReactStd;
 /* NapsterPlayer.on(Error, (error) => Js.log2("Error:", error)); */
 
 type state = {
-    currentTrack: option(Models.Track.id)
+    currentTrack: option(Models.Track.t)
 };
 
 type action =
-    | SetTrack(Models.Track.id);
+    | SetTrack(Models.Track.t);
 
 let playTrack = ({ ReasonReact.reduce }, trackId) =>
     go(reduce, SetTrack(trackId));

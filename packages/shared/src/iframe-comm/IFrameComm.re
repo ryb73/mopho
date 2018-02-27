@@ -2,7 +2,8 @@ open ReDomSuite;
 
 [@autoserialize]
 type message =
-    | LoggedIn(string);
+    | LoggedIn(string)
+    | PlaySong(Models.Track.napsterId);
 
 let post = (message, targetOrigin, targetWindow) =>
   Window.postMessage(targetWindow, message__to_json(message), targetOrigin);

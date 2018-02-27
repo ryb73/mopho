@@ -19,6 +19,7 @@
 
         > .main-pane {
             flex-grow: 4;
+            overflow: auto;
         }
     }
 

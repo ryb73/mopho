@@ -14,24 +14,26 @@ type metadataSource =
 
 module Artist = {
     [@autoserialize] type id = int;
+    [@autoserialize] type napsterId = string;
 
     [@autoserialize]
     type t = {
         id: id,
         name: string,
-        napsterId: option(string),
+        napsterId: option(napsterId),
         metadataSource: metadataSource
     };
 };
 
 module Album = {
     [@autoserialize] type id = int;
+    [@autoserialize] type napsterId = string;
 
     [@autoserialize]
     type t = {
         id: id,
         name: string,
-        napsterId: option(string),
+        napsterId: option(napsterId),
         metadataSource: metadataSource,
         primaryArtistId: Artist.id
     };
@@ -39,12 +41,13 @@ module Album = {
 
 module Track = {
     [@autoserialize] type id = int;
+    [@autoserialize] type napsterId = string;
 
     [@autoserialize]
     type t = {
         id: id,
         name: string,
-        napsterId: option(string),
+        napsterId: option(napsterId),
         metadataSource: metadataSource,
         albumId: Album.id,
         primaryArtistId: Artist.id

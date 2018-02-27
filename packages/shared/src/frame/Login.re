@@ -42,12 +42,13 @@ let loginWithCode = (onLoggedIn, code) =>
 let iFrameMounted = (onLoggedIn, element, _) => {
     element
         |> Js.Null.to_opt
-        |> map(Element.make)
+        |> map(Element.fromDom)
         >>= IFrame.cast
         |> map(IFrame.contentWindow)
         |> map(IFrameComm.listen("http://www.mopho.local", (message) => {
             ignore @@ switch message {
                 | LoggedIn(code) => loginWithCode(onLoggedIn, code)
+                | _ => resolve()
             };
         }));
 

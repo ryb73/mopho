@@ -38,10 +38,11 @@ let renderAlbum = ({ Models.Album.id, name, primaryArtistId}) =>
     </li>;
 
 let renderTrack = (
-    { Context.playTrack }, { Models.Track.id, name, primaryArtistId, albumId }
+    { Context.playTrack },
+    { Models.Track.id, name, primaryArtistId, albumId } as track
 ) =>
     <li key=(string_of_int(id))>
-        <a href="#" onClick={(_) => playTrack(id)}>
+        <a href="#" onClick={(_) => playTrack(track)}>
             (s2e({j|$id – $name ($primaryArtistId – $albumId)|j}))
         </a>
     </li>;
