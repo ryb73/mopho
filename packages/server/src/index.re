@@ -149,13 +149,11 @@ Apis.LogInWithCode.handle(app, (req, resp, _, code) =>
 );
 
 module GetMyUserData = Priveleged.Make(Apis.GetMyUserData);
-
 GetMyUserData.handle(app, (_, _, _, _, user) =>
     resolve(GetMyUserData.Result(user))
 );
 
 module LogOut = Priveleged.Make(Apis.LogOut);
-
 LogOut.handle(app, (_, resp, _, _, _) => {
     Response.clearCookie(resp, Priveleged.authTokenCookie);
     resolve(LogOut.Result());
@@ -210,6 +208,21 @@ Search.handle(app, (req, _, _, query, user) => {
             | Some(v) => v
             | None => Search.ErrorCode(500)
         );
+});
+
+module GetNapsterCredentials = Priveleged.Make(Apis.GetNapsterCredentials);
+GetNapsterCredentials.handle(app, (_, _, _, _, user) => {
+    EAuthNapster.refreshAccessToken(user.id)
+        |> BluebirdEx.map((tokens) => {
+            switch tokens {
+                | None => GetNapsterCredentials.Result(None)
+                | Some({ EAuthNapster.access_token, refresh_token }) =>
+                    GetNapsterCredentials.Result(Some({
+                        accessToken: access_token,
+                        refreshToken: refresh_token
+                    }))
+            };
+        });
 });
 
 App.listen(app, ~onListen=(_) => Js.log("listening"), ());

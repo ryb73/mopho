@@ -14,11 +14,28 @@ module NapsterAuth_impl = {
         state: string
     };
 
-    [@autoserialize] type resp = {mophoCode: string};
+    [@autoserialize] type resp = { mophoCode: string };
+
     let path = "/napster-auth/";
     let reqMethod = Get;
 };
 module NapsterAuth = Endpoint(NapsterAuth_impl);
+
+module GetNapsterCredentials_impl = {
+    [@autoserialize] type req = unit;
+
+    [@autoserialize]
+    type tokens = {
+        accessToken: string,
+        refreshToken: string
+    };
+
+    [@autoserialize] type resp = option(tokens);
+
+    let path = "/get-napster-credentials/";
+    let reqMethod = Get;
+};
+module GetNapsterCredentials = Endpoint(GetNapsterCredentials_impl);
 
 module LogInWithCode = Endpoint({
     [@autoserialize] type req = string;
