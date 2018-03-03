@@ -32,10 +32,13 @@ let registerEvents = () => {
     NapsterPlayer.onError(Js.log2("Napster error"));
 
     NapsterPlayer.onMetadata(Js.log2("onMetadata"));
-    NapsterPlayer.onPlayEvent(Js.log2("onPlayEvent"));
     NapsterPlayer.onPlaySessionExpired(Js.log2("onPlaySessionExpired"));
     NapsterPlayer.onPlayStopped(Js.log2("onPlayStopped"));
     NapsterPlayer.onPlayTimer(Js.log2("onPlayTimer"));
+
+    NapsterPlayer.onPlayEvent(({ playing }) => {
+        IFrameComm.post(IFrameComm.PlayEvent(playing), "http://www.mopho.local", Window.parent(ReDom.window));
+    });
 };
 
 let playSong = (id) => {

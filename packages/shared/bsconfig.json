@@ -13,7 +13,8 @@
         "bs-config",
         "bs-express",
         "bs-result-ex",
-        "bs-bluebird"
+        "bs-bluebird",
+        "re-classnames"
     ],
     "sources" : [
         {
