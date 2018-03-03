@@ -2,23 +2,22 @@ open FrameConfig;
 open ReDomSuite;
 open Bluebird;
 
-module BluebirdEx = PromiseEx.Make(Bluebird);
-open BluebirdEx;
-
 let player = ref(None);
 
 let registerEvents = () => {
     NapsterPlayer.onReady((p) => {
         Apis.GetNapsterCredentials.request(config.apiUrl, ())
-            |> map((result) => {
+            |> then_((result) => {
                 switch result {
                     | None => failwith("TODO: reauth")
-                    | Some({ Apis.GetNapsterCredentials_impl.accessToken, refreshToken }) =>
+                    | Some({ Apis.GetNapsterCredentials_impl.accessToken, refreshToken }) => {
                         NapsterPlayer.setAuth({
                             "accessToken": accessToken,
                             "refreshToken": refreshToken
                         });
-                        NapsterPlayer.auth();
+
+                        NapsterPlayer.testConnection();
+                    }
                 };
             })
             |> catch((exn) => {
@@ -26,7 +25,6 @@ let registerEvents = () => {
                 resolve();
             });
 
-        NapsterPlayer.load();
         Js.log("ready!");
         player := Some(p);
     });
