@@ -41,7 +41,7 @@ let loginWithCode = (onLoggedIn, code) =>
 
 let iFrameMounted = (onLoggedIn, element, _) => {
     element
-        |> Js.Null.to_opt
+        |> Js.Nullable.to_opt
         |> map(Element.fromDom)
         >>= IFrame.cast
         |> map(IFrame.contentWindow)

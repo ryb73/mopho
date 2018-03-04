@@ -26,19 +26,16 @@ let make = (~playerUrl, ~trackId=?, _) => {
     let iFrameState = ref(None);
 
     let iFrameMounted = (elem, { ReasonReact.reduce }) => {
-        /* Js.log2("mounted", elem); */
-
         iFrameState^
             |> may(((_, listener)) => IFrameComm.removeListener(listener));
 
         iFrameState := elem
-            |> Js.Null.to_opt
+            |> Js.Nullable.to_opt
             |> map(Element.fromDom)
             >>= IFrame.cast
             |> map(IFrame.contentWindow)
             |> map((window) => {
                 let listener = IFrameComm.listen("http://www.mopho.local", (message) => {
-                    /* Js.log2("message!",message); */
                     switch message {
                         | PlayEvent(playing) => go(reduce, SetPlaying(playing))
                         | PlayTimer(progress, length) => go(reduce, SetPlaybackState(progress, length))
