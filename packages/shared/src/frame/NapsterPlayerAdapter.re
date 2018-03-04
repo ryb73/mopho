@@ -38,7 +38,8 @@ let registerEvents = () => {
     NapsterPlayer.onPlaySessionExpired(Js.log2("onPlaySessionExpired"));
     NapsterPlayer.onPlayStopped(Js.log2("onPlayStopped"));
 
-    NapsterPlayer.onPlayEvent(({ playing }) => {
+    NapsterPlayer.onPlayEvent(({ playing } as msg) => {
+        Js.log(NapsterPlayer.playEvent__to_json(msg));
         post(IFrameComm.PlayEvent(playing));
     });
 

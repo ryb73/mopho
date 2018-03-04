@@ -1,10 +1,14 @@
-open ReactStd;
-
 let component = ReasonReact.statelessComponent("PlaybackProgress");
 let make = (~progress, ~length, _) => {
     ...component,
 
     render: (_) => {
-        <span>(s2e(Js.String.make(progress) ++ "/" ++ Js.String.make(length)))</span>
+        let progressWidth = Js.String.make(progress /. length *. 100.0) ++ "%";
+        let progressStyle = ReactDOMRe.Style.make(~width=progressWidth, ());
+
+        <div className="playback-progress">
+            <div className="progress" style=progressStyle />
+            <div className="scrub" />
+        </div>
     }
 };

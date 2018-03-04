@@ -1,0 +1,24 @@
+> .playback-progress {
+    background-color: #EEE;
+    height: 8px;
+    overflow: hidden;
+    cursor: pointer;
+
+    > .progress {
+        float: left;
+        background-color: rgb(94, 186, 243);
+        height: 100%;
+    }
+
+    > .scrub {
+        display: none;
+        float: left;
+        width: 8px;
+        height: 100%;
+        background-color: #333;
+    }
+
+    &:hover > .scrub {
+        display: block;
+    }
+}

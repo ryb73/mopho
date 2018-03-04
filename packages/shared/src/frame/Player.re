@@ -1,17 +1,22 @@
-open ReactStd;
 open ReDomSuite;
 open Option;
 open Option.Infix;
 
 type retainedProps = option(Models.Track.napsterId);
 
+type playingState =
+    | NotPlaying
+    | WaitingToPlay
+    | Playing;
+
 type state = {
-    playing: bool,
+    playing: playingState,
     playbackState: option((float, float))
 };
 
 type action =
-    | SetPlaying(bool)
+    | SetPlayingState(playingState)
+    | PlayTrack(Models.Track.napsterId)
     | SetPlaybackState(float, float);
 
 let renderPlaybackProgress = (playbackState) => {
@@ -25,7 +30,7 @@ let component = ReasonReact.reducerComponentWithRetainedProps("Player");
 let make = (~playerUrl, ~trackId=?, _) => {
     let iFrameState = ref(None);
 
-    let iFrameMounted = (elem, { ReasonReact.reduce }) => {
+    let iFrameMounted = (elem, { ReasonReact.send }) => {
         iFrameState^
             |> may(((_, listener)) => IFrameComm.removeListener(listener));
 
@@ -37,8 +42,9 @@ let make = (~playerUrl, ~trackId=?, _) => {
             |> map((window) => {
                 let listener = IFrameComm.listen("http://www.mopho.local", (message) => {
                     switch message {
-                        | PlayEvent(playing) => go(reduce, SetPlaying(playing))
-                        | PlayTimer(progress, length) => go(reduce, SetPlaybackState(progress, length))
+                        | PlayEvent(true) => send(SetPlayingState(Playing))
+                        | PlayEvent(false) => send(SetPlayingState(NotPlaying))
+                        | PlayTimer(progress, length) => send(SetPlaybackState(progress, length))
                         | _ => ()
                     };
                 }, window);
@@ -53,20 +59,21 @@ let make = (~playerUrl, ~trackId=?, _) => {
             |> Option.get
             |> IFrameComm.post(message, "http://www.mopho.local");
 
-    let playTrack = (id) => post(IFrameComm.PlaySong(id));
-
     let pause = (_) => post(IFrameComm.PauseSong);
 
-    let renderPlayPause = (classname, { ReasonReact.state: { playing } }) => {
+    let renderPlayPause = (classname, { ReasonReact.state: { playing }, send }) => {
         switch (playing, trackId) {
-            | (false, Some(trackId)) =>
-                <i className={Cn.make(["fa-play", classname])}
-                    onClick={(_) => playTrack(trackId)} />
+            | (WaitingToPlay, _) =>
+                <i className={Cn.make(["fa-spinner", "fa-spin", classname])} />
 
-            | (false, None) =>
+            | (NotPlaying, Some(trackId)) =>
+                <i className={Cn.make(["fa-play", classname])}
+                    onClick={(_) => send(PlayTrack(trackId))} />
+
+            | (NotPlaying, None) =>
                 <i className={Cn.make(["fa-play", classname])} />
 
-            | (true, _) =>
+            | (Playing, _) =>
                 <i className={Cn.make(["fa-pause", classname])} onClick=pause />
         };
     };
@@ -99,12 +106,10 @@ let make = (~playerUrl, ~trackId=?, _) => {
             </div>
         },
 
-        didUpdate: ({ oldSelf }) => {
-            /* Js.log("didUpdate"); */
+        didUpdate: ({ oldSelf, newSelf }) => {
             if(oldSelf.retainedProps !== trackId) {
-                /* Js.log("hoo boy"); */
                 switch (trackId) {
-                    | Some(trackId) => playTrack(trackId)
+                    | Some(trackId) => newSelf.send(PlayTrack(trackId))
                     | None => ()
                 };
             } else {
@@ -114,12 +119,20 @@ let make = (~playerUrl, ~trackId=?, _) => {
 
         retainedProps: { trackId },
 
-        initialState: () => { playing: false, playbackState: None },
+        initialState: () => { playing: NotPlaying, playbackState: None },
 
         reducer: (action, state) =>
             switch action {
-                | SetPlaying(playing) => ReasonReact.Update({ ...state, playing })
-                | SetPlaybackState(progress, length) => ReasonReact.Update({ ...state, playbackState: Some((progress, length)) })
+                | SetPlayingState(playing) =>
+                    ReasonReact.Update({ ...state, playing })
+
+                | SetPlaybackState(progress, length) =>
+                    ReasonReact.Update({ ...state, playbackState: Some((progress, length)) })
+
+                | PlayTrack(id) => {
+                    post(IFrameComm.PlaySong(id));
+                    ReasonReact.Update({ ...state, playing: WaitingToPlay });
+                }
             }
     }
 };
