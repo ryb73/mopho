@@ -4,6 +4,9 @@ open Bluebird;
 
 let player = ref(None);
 
+let post = (message) =>
+    IFrameComm.post(message, "http://www.mopho.local", Window.parent(ReDom.window));
+
 let registerEvents = () => {
     NapsterPlayer.onReady((p) => {
         Apis.GetNapsterCredentials.request(config.apiUrl, ())
@@ -34,16 +37,15 @@ let registerEvents = () => {
     NapsterPlayer.onMetadata(Js.log2("onMetadata"));
     NapsterPlayer.onPlaySessionExpired(Js.log2("onPlaySessionExpired"));
     NapsterPlayer.onPlayStopped(Js.log2("onPlayStopped"));
-    NapsterPlayer.onPlayTimer(Js.log2("onPlayTimer"));
 
     NapsterPlayer.onPlayEvent(({ playing }) => {
-        IFrameComm.post(IFrameComm.PlayEvent(playing), "http://www.mopho.local", Window.parent(ReDom.window));
+        post(IFrameComm.PlayEvent(playing));
     });
-};
 
-let playSong = (id) => {
-    Js.log2("playing song", id);
-    NapsterPlayer.play(id, Option.get(player^));
+    NapsterPlayer.onPlayTimer(({ currentTime, totalTime }) => {
+        /* Js.log3("timer",currentTime,totalTime); */
+        post(IFrameComm.PlayTimer(currentTime, totalTime));
+    });
 };
 
 switch (NapsterPlayer.init(config.napsterApiKey, "v2.2")) {
@@ -53,7 +55,8 @@ switch (NapsterPlayer.init(config.napsterApiKey, "v2.2")) {
 
 IFrameComm.listen("http://www.mopho.local", (message) => {
     switch message {
-        | PlaySong(id) => playSong(id)
+        | PlaySong(id) => NapsterPlayer.play(id, Option.get(player^))
+        | PauseSong => NapsterPlayer.pause(Option.get(player^))
         | _ => ()
     };
 }, Window.parent(ReDom.window));
