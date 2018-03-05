@@ -6,7 +6,8 @@ type message =
     | PlaySong(Models.Track.napsterId)
     | PlayEvent(bool) /* playing */
     | PlayTimer(float, float) /* progress, totalLength */
-    | PauseSong;
+    | PauseSong
+    | Seek(float);
 
 let post = (message, targetOrigin, targetWindow) =>
   Window.postMessage(targetWindow, message__to_json(message), targetOrigin);

@@ -17,12 +17,13 @@ type state = {
 type action =
     | SetPlayingState(playingState)
     | PlayTrack(Models.Track.napsterId)
-    | SetPlaybackState(float, float);
+    | SetPlaybackState(float, float)
+    | Seek(float);
 
-let renderPlaybackProgress = (playbackState) => {
+let renderPlaybackProgress = (playbackState, { ReasonReact.send }) => {
     switch playbackState {
         | None => ReasonReact.nullElement
-        | Some((progress, length)) => <PlaybackProgress progress length />
+        | Some((progress, length)) => <PlaybackProgress progress length onSeek=((pos) => send(Seek(pos))) />
     };
 };
 
@@ -102,7 +103,7 @@ let make = (~playerUrl, ~trackId=?, _) => {
                     <i className={Cn.make(["fa-angle-double-right", controlsClassname])} />
                 </button>
 
-                (renderPlaybackProgress(playbackState))
+                (renderPlaybackProgress(playbackState, self))
             </div>
         },
 
@@ -121,17 +122,30 @@ let make = (~playerUrl, ~trackId=?, _) => {
 
         initialState: () => { playing: NotPlaying, playbackState: None },
 
-        reducer: (action, state) =>
+        reducer: (action, { playing } as state) =>
             switch action {
                 | SetPlayingState(playing) =>
                     ReasonReact.Update({ ...state, playing })
 
                 | SetPlaybackState(progress, length) =>
-                    ReasonReact.Update({ ...state, playbackState: Some((progress, length)) })
+                    ReasonReact.Update({...state, playbackState: Some((progress, length)) })
 
                 | PlayTrack(id) => {
                     post(IFrameComm.PlaySong(id));
                     ReasonReact.Update({ ...state, playing: WaitingToPlay });
+                }
+
+                | Seek(pos) => {
+                    post(IFrameComm.Seek(pos));
+
+                    switch playing {
+                        | Playing =>
+                            ReasonReact.Update(
+                                { ...state, playing: WaitingToPlay }
+                            );
+
+                        | _ => ReasonReact.NoUpdate
+                    };
                 }
             }
     }

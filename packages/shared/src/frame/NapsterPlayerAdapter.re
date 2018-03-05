@@ -3,6 +3,7 @@ open ReDomSuite;
 open Bluebird;
 
 let player = ref(None);
+let getPlayer = () => Option.get(player^);
 
 let post = (message) =>
     IFrameComm.post(message, "http://www.mopho.local", Window.parent(ReDom.window));
@@ -56,8 +57,9 @@ switch (NapsterPlayer.init(config.napsterApiKey, "v2.2")) {
 
 IFrameComm.listen("http://www.mopho.local", (message) => {
     switch message {
-        | PlaySong(id) => NapsterPlayer.play(id, Option.get(player^))
-        | PauseSong => NapsterPlayer.pause(Option.get(player^))
+        | PlaySong(id) => NapsterPlayer.play(id, getPlayer())
+        | PauseSong => NapsterPlayer.pause(getPlayer())
+        | Seek(pos) => NapsterPlayer.seek(pos, getPlayer())
         | _ => ()
     };
 }, Window.parent(ReDom.window));
