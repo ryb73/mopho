@@ -1,0 +1,23 @@
+{
+  "name": "mopho-electron",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run clean && bsb -make-world",
+    "watch": "npm run clean && bsb -make-world -w",
+    "clean": "rm -rf lib && bsb -clean-world"
+  },
+  "keywords": [],
+  "license": "GPL-2.0",
+  "author": "Ryan Biwer",
+  "_": [],
+  "repository": "git@github.com:ryb73/mopho.git",
+  "peerDependencies": {
+    "bs-platform": "^2.0.0"
+  },
+  "dependencies": {
+    "electron-debug": "^1.5.0"
+  }
+}
