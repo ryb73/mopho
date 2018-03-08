@@ -4,12 +4,12 @@ open BsElectron;
 
 [%bs.raw "require('electron-debug')({showDevTools: true})"];
 
-let winRef: ref(option(BrowserWindow.t)) = ref(None);
+let winRef = ref(None);
 
 let createWindow = () => {
     ElectronUpdater.checkForUpdatesAndNotify ();
 
-    let win = BrowserWindow.make();
+    let win = BrowserWindow.make(~plugins=true, ());
     winRef := Some(win);
 
     BrowserWindow.loadUrl("http://www.mopho.local/", win);
