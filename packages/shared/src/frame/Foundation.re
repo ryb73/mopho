@@ -1,43 +1,69 @@
 open ReactStd;
 
-/* NapsterPlayer.on(Error, (error) => Js.log2("Error:", error)); */
-
 type state = {
-    currentTrack: option(Models.Track.t)
+    currentTrack: option(Models.Track.t),
+    currentPage: component
 };
 
 type action =
-    | SetTrack(Models.Track.t);
+    | SetTrack(Models.Track.t)
+    | SetPage(component);
 
-let playTrack = ({ ReasonReact.reduce }, trackId) =>
-    go(reduce, SetTrack(trackId));
+let getComponent = (type d, key: pageKey(d), dynamicProps: d) => {
+    module InitializedPage = {
+        module NewPage = (val PageRegister.getPage(key));
+        include NewPage;
+        let make = make(~dynamicProps);
+    };
+
+    (module InitializedPage : Component);
+};
+
+let makeContext = ({ ReasonReact.send }) => {
+    Context.playTrack: (trackId) =>
+        send(SetTrack(trackId)),
+
+    navigate: (key, dynamicProps) =>
+        send(SetPage(getComponent(key, dynamicProps))),
+};
 
 let component = ReasonReact.reducerComponent("Foundation");
 let make = (_) => {
     ...component,
 
     render: (self) => {
-        let {  ReasonReact.state: { currentTrack } } = self;
+        let { ReasonReact.state: { currentTrack, currentPage } } = self;
+
+        let context = makeContext(self);
 
         <div className="foundation">
-            <div className="top-bar"> <input _type="text" placeholder="Search" /> </div>
+            <div className="top-bar">
+                <TopBar context />
+            </div>
+
             <div className="center-bar">
                 <div className="left-pane">
                     (s2e("Leftbar"))
                 </div>
 
-                <MainPane playTrack={playTrack(self)} />
+                <MainPane context currentPage />
             </div>
 
-            <BottomBar currentTrack />
+            <div className="bottom-bar">
+                <BottomBar currentTrack />
+            </div>
         </div>
     },
 
-    initialState: () => { currentTrack: None },
+    initialState: () => {
+        currentTrack: None,
+        currentPage: getComponent(HomePage, ())
+    },
 
-    reducer: (action, _) => {
+    reducer: (action, state) => {
         switch action {
-            | SetTrack(id) => ReasonReact.Update({ currentTrack: Some(id) })
+            | SetTrack(id) => ReasonReact.Update({ ...state, currentTrack: Some(id) })
+            | SetPage(page) => ReasonReact.Update({ ...state, currentPage: page })
         };
     }
 };

@@ -22,10 +22,6 @@ let logOut = (_) => {
     ();
 };
 
-let testSearch = ({ Context.navigate }, _, _) => {
-    navigate(SearchPage, "mitski");
-};
-
 let component = ReasonReact.reducerComponent("HomePage");
 
 let make = (~dynamicProps as (), ~context, _) => {
@@ -36,7 +32,6 @@ let make = (~dynamicProps as (), ~context, _) => {
 
         <div>
             <button onClick=(logOut)>(s2e("Log Out"))</button>
-            <button onClick=(handle(testSearch(context)))>(s2e("Search"))</button>
         </div>;
     },
 

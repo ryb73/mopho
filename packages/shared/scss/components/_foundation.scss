@@ -23,5 +23,8 @@
         }
     }
 
-    @import "bottom-bar";
+    > .bottom-bar {
+        flex-basis: 72px;
+        @import "bottom-bar";
+    }
 }
