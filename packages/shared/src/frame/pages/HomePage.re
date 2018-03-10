@@ -24,12 +24,10 @@ let logOut = (_) => {
 
 let component = ReasonReact.reducerComponent("HomePage");
 
-let make = (~dynamicProps as (), ~context, _) => {
+let make = (~dynamicProps as (), ~context as _, _) => {
     ...component,
 
-    render: (self) => {
-        let { ReasonReact.handle } = self;
-
+    render: (_) => {
         <div>
             <button onClick=(logOut)>(s2e("Log Out"))</button>
         </div>;

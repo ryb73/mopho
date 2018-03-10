@@ -65,6 +65,7 @@ let findByName = (name) => {
 
     _selectArtistFields()
         |> whereParam("name = ?", ?? name)
+        |> whereParam("napsterId = ?", ?? option__to_json((_) => Js.Json.null, None)) /* TODO: this'll have to be generalized */
         |> toString
         |> doQuery
         |> map(_parseSingleArtistResult)

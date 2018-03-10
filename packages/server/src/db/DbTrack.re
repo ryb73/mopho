@@ -83,6 +83,7 @@ let findByNameAndArtist = (name, primaryArtist) => {
     DbHelper.selectAll("tracks")
         |> whereParam("name = ?", ?? name)
         |> whereParam("primaryArtistId = ?", ?? primaryArtistId)
+        |> whereParam("napsterId = ?", ?? option__to_json((_) => Js.Json.null, None)) /* TODO: this'll have to be generalized */
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleTrackResult)
