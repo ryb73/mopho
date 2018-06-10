@@ -8,7 +8,7 @@ const path                  = require("path"),
       ClosureCompilerPlugin = require("webpack-closure-compiler");
 
 function rel(relPath) {
-    return path.resolve(__dirname, "../" + relPath)
+    return path.resolve(__dirname, "../" + relPath);
 }
 
 const config = configModule.util.loadFileConfigs(rel("config/"));

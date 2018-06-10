@@ -41,7 +41,7 @@ let _convertDbAlbum = ({ id, name, napsterId, metadataSource, primaryArtistId })
 let createFromNapster = (~name, ~napsterId, ~primaryArtist) => {
     open Insert;
 
-    Js.log4("Inserting album from Napster:", primaryArtist.Models.Artist.name, {j|–|j}, name);
+    Js.log3("Inserting album from Napster:", primaryArtist.Models.Artist.name, {j|– $name ($napsterId)|j});
 
     let napsterId = Some(napsterId);
 
