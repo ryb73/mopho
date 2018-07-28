@@ -5,13 +5,11 @@ open ReactStd;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
 
-[@noserialize]
 type state =
     | Initializing
     | LoggedOut
     | LoggedIn;
 
-[@noserialize]
 type action =
     | SetLoggedIn(bool);
 
@@ -26,7 +24,7 @@ let getReqResult = [@bs.open] (fun
     it means the user is logged in. If we get a 401 error, they're
     logged out.
  */
-let checkLoggedIn = ({ ReasonReact.reduce }) =>
+let checkLoggedIn = ({ ReasonReact.send }) =>
     Apis.GetMyUserData.request(config.apiUrl, ())
         |> thenResolve(true)
         |> catch((exn) => {
@@ -35,14 +33,14 @@ let checkLoggedIn = ({ ReasonReact.reduce }) =>
                 | _ => reject(Obj.magic(exn))
             };
         })
-        |> map((loggedIn) => go(reduce, SetLoggedIn(loggedIn)))
+        |> map((loggedIn) => send(SetLoggedIn(loggedIn)))
         |> ignore;
 
 let make = (_) => {
     ...component,
 
     render: (self) => {
-        let { ReasonReact.state, reduce } = self;
+        let { ReasonReact.state, send } = self;
 
         (state === Initializing) ?
             checkLoggedIn(self)
@@ -52,7 +50,7 @@ let make = (_) => {
         let content =
             switch state {
                 | Initializing => <span> (s2e("Initializing")) </span>
-                | LoggedOut => <Login onLoggedIn=(reduce((_) => SetLoggedIn(true))) />
+                | LoggedOut => <Login onLoggedIn=(_ => send(SetLoggedIn(true))) />
                 | LoggedIn => <Foundation />
             };
 

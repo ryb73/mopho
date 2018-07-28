@@ -7,8 +7,8 @@ open BluebirdEx;
 
 let doQuery = (query) => Mysql.Queryable.query(DbPool.pool, query) |> fromPromise;
 
-[@autoserialize] type refreshTokenResult = { refreshToken: string };
-[@autoserialize] type getRefreshTokenResult = array(refreshTokenResult);
+[@decco] type refreshTokenResult = { refreshToken: string };
+[@decco] type getRefreshTokenResult = array(refreshTokenResult);
 let getRefreshToken = (userId : Models.User.id) => {
     open Select;
 
@@ -19,7 +19,7 @@ let getRefreshToken = (userId : Models.User.id) => {
         |> toString
         |> doQuery
         |> map(((result, _)) => {
-            switch (getRefreshTokenResult__from_json(result)) {
+            switch (getRefreshTokenResult_decode(result)) {
                 | Error(_) => Js.Exn.raiseError("Error converting select result")
                 | Ok([| { refreshToken } |]) => Some(refreshToken)
                 | Ok([||]) => None

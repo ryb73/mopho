@@ -1,22 +1,22 @@
 module User = {
-    [@autoserialize] type id = int;
+    [@decco] type id = int;
 
-    [@autoserialize]
+    [@decco]
     type t = {
         id: id,
         name: string
     };
 };
 
-[@autoserialize]
+[@decco]
 type metadataSource =
     | Napster;
 
 module Artist = {
-    [@autoserialize] type id = int;
-    [@autoserialize] type napsterId = string;
+    [@decco] type id = int;
+    [@decco] type napsterId = string;
 
-    [@autoserialize]
+    [@decco]
     type t = {
         id: id,
         name: string,
@@ -26,10 +26,10 @@ module Artist = {
 };
 
 module Album = {
-    [@autoserialize] type id = int;
-    [@autoserialize] type napsterId = string;
+    [@decco] type id = int;
+    [@decco] type napsterId = string;
 
-    [@autoserialize]
+    [@decco]
     type t = {
         id: id,
         name: string,
@@ -40,10 +40,10 @@ module Album = {
 };
 
 module Track = {
-    [@autoserialize] type id = int;
-    [@autoserialize] type napsterId = string;
+    [@decco] type id = int;
+    [@decco] type napsterId = string;
 
-    [@autoserialize]
+    [@decco]
     type t = {
         id: id,
         name: string,
@@ -55,7 +55,7 @@ module Track = {
 };
 
 module SearchResults = {
-    [@autoserialize]
+    [@decco]
     type t =
         | Track(Track.t);
 };

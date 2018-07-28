@@ -5,7 +5,7 @@ open BsKnex;
 
 let knex = Core.make("mysql");
 
-[@autoserialize] type insertResult = { insertId: int };
+[@decco] type insertResult = { insertId: int };
 
 let testAffectedRows = (~expected=1, (result, _)) => {
     let affectedRows = Js.Json.decodeObject(result)
@@ -24,7 +24,7 @@ let testAffectedRows = (~expected=1, (result, _)) => {
 };
 
 let getInsertId = ((result, _)) =>
-    switch (insertResult__from_json(result)) {
+    switch (insertResult_decode(result)) {
         | Error(_) => Js.Exn.raiseError("Error converting insert result")
         | Ok({insertId}) => insertId
     };

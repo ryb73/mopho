@@ -40,11 +40,11 @@ let registerEvents = () => {
     NapsterPlayer.onPlayStopped(Js.log2("onPlayStopped"));
 
     NapsterPlayer.onPlayEvent(({ playing } as msg) => {
-        Js.log(NapsterPlayer.playEvent__to_json(msg));
+        Js.log(NapsterPlayer.playEvent_encode(msg));
         post(IFrameComm.PlayEvent(playing));
     });
 
-    NapsterPlayer.onPlayTimer(({ currentTime, totalTime }) => {
+    NapsterPlayer.onPlayTimer(({ NapsterPlayer.currentTime, totalTime }) => {
         /* Js.log3("timer",currentTime,totalTime); */
         post(IFrameComm.PlayTimer(currentTime, totalTime));
     });

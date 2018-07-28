@@ -62,7 +62,7 @@ let make = (~progress, ~length, ~onSeek, _) => {
             let progressWidth = Js.String.make(position /. length *. 100.0) ++ "%";
             let progressStyle = ReactDOMRe.Style.make(~width=progressWidth, ());
 
-            <div className="playback-progress" draggable=Js.true_ onDragStart
+            <div className="playback-progress" draggable=true onDragStart
                  onDrag=handle(onDrag) onDragEnd=handle(onDragEnd) onClick
             >
                 <div className="progress" style=progressStyle />

@@ -15,10 +15,9 @@
   "_": [],
   "repository": "git@github.com:ryb73/mopho.git",
   "peerDependencies": {
-    "bs-platform": "^2.0.0"
+    "bs-platform": "^3.1.5"
   },
   "devDependencies": {
-    "iron-node": "^3.0.20",
     "mopho-shared": "^1.0.0",
     "webpack": "^3.6.0"
   }

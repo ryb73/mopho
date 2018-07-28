@@ -1,12 +1,12 @@
-open Js.Result;
+open Belt.Result;
 
-[@autoserialize]
+[@decco]
 type napsterConfig = {
     apiKey: string,
     secret: string
 };
 
-[@autoserialize]
+[@decco]
 type config = {
     secure: bool,
     origin: string,
@@ -14,11 +14,10 @@ type config = {
     napster: napsterConfig
 };
 
-let config = Config.get("mopho-api-server") |> config__from_json;
+let config = Config.get("mopho-api-server") |> config_decode;
 
 let config =
     switch config {
         | Ok(c) => c
-        | Error(Some(key)) => Js.Exn.raiseError("Error loading mopho-api-server config: " ++ key)
-        | Error(_) => Js.Exn.raiseError("Error loading mopho-api-server config")
+        | Error(e) => Js.log(e); Js.Exn.raiseError("Error loading mopho-api-server config")
     };

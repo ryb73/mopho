@@ -7,34 +7,24 @@ open BluebirdEx;
 
 let map = BluebirdEx.map;
 
-[@autoserialize] type track = {
+[@decco] type track = {
     id: int,
     name: string,
     primaryArtistId: int,
     albumId: int,
-    napsterId: [@autoserialize.custom (
-        option__to_json(string__to_json)
+    napsterId: option(string),
+    metadataSource: [@decco.codec (
+        Models.metadataSource_encode
             %> Js.Json.stringify
             %> Js.Json.string,
-        Js.Json.decodeString
-            %> Option.get_js
-            %> Js.Json.parseExn
-            %> option__from_json(string__from_json),
-        string__to_devtools
-    )] option(string),
-    metadataSource: [@autoserialize.custom (
-        Models.metadataSource__to_json
-            %> Js.Json.stringify
-            %> Js.Json.string,
-        Js.Json.decodeString
-            %> ResultEx.fromOpt(None)
-            %> ResultEx.map(Js.Json.parseExn)
-            %> ResultEx.bind(Models.metadataSource__from_json),
-        string__to_devtools
+        (j) => Js.Json.decodeString(j)
+            |> ResultEx.fromOpt({ Decco.path: "", message: "Not a string", value: j })
+            |> Belt.Result.map(_, Js.Json.parseExn)
+            |> Belt.Result.flatMap(_, Models.metadataSource_decode)
     )] Models.metadataSource
 };
 
-[@autoserialize] type tracksResult = array(track);
+[@decco] type tracksResult = array(track);
 
 let _convertDbTrack = ({ id, name, napsterId, metadataSource, primaryArtistId, albumId }) =>
     { Models.Track.id, name, napsterId, metadataSource, primaryArtistId, albumId };
@@ -49,12 +39,13 @@ let createFromNapster = (~name, ~napsterId, ~primaryArtist, ~album) => {
     Insert.make(DbHelper.knex)
         |> into("tracks")
         |> set("name", name)
-        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
-        |> set("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
+        |> set("napsterId", napsterId)
+        |> set("metadataSource", Js.Json.stringify(Models.metadataSource_encode(Models.Napster)))
         |> set("createdUtc", Std.getCurrentUtc())
         |> set("primaryArtistId", primaryArtist.id)
         |> set("albumId", album.Models.Album.id)
         |> toString
+        |> Js.String.replaceByRe([%bs.re "/^insert/i"], "insert ignore")
         |> DbHelper.doQuery
         |> map(DbHelper.getInsertId)
         |> map(id => {
@@ -66,12 +57,11 @@ let createFromNapster = (~name, ~napsterId, ~primaryArtist, ~album) => {
 };
 
 let _parseSingleTrackResult = ((result, _)) => {
-    switch (tracksResult__from_json(result)) {
+    switch (tracksResult_decode(result)) {
         | Ok([| artist |]) => Some(_convertDbTrack(artist))
         | Ok([||]) => None
         | Ok(_) => Js.Exn.raiseError("Multiple matches found")
-        | Error(Some(s)) => Js.Exn.raiseError("Error converting albumsResult: " ++ s)
-        | Error(_) => Js.Exn.raiseError("Error converting albumsResult")
+        | Error(e) => Js.log(e); Js.Exn.raiseError("Error converting albumsResult")
     };
 };
 
@@ -83,7 +73,7 @@ let findByNameAndArtist = (name, primaryArtist) => {
     DbHelper.selectAll("tracks")
         |> whereParam("name = ?", ?? name)
         |> whereParam("primaryArtistId = ?", ?? primaryArtistId)
-        |> whereParam("napsterId = ?", ?? option__to_json((_) => Js.Json.null, None)) /* TODO: this'll have to be generalized */
+        |> where("napsterId IS NULL") /* TODO: this'll have to be generalized */
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleTrackResult)
@@ -93,12 +83,8 @@ let findByNameAndArtist = (name, primaryArtist) => {
 let findByNapsterId = (napsterId) => {
     open Select;
 
-    let json = Some(napsterId)
-        |> option__to_json(string__to_json)
-        |> Js.Json.stringify;
-
     DbHelper.selectAll("tracks")
-        |> whereParam("napsterId = ?", ?? json)
+        |> whereParam("napsterId = ?", ?? napsterId)
         |> toString
         |> DbHelper.doQuery
         |> map(_parseSingleTrackResult)
@@ -111,7 +97,7 @@ let setNapsterId = (napsterId, { Models.Track.id }) => {
     Js.log2("Setting napster ID for track", id);
 
     Update.make("tracks", DbHelper.knex)
-        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
+        |> set("napsterId", napsterId)
         |> whereParam("id = ?", ?? id)
         |> toString
         |> DbHelper.doQuery

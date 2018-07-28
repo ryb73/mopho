@@ -22,7 +22,7 @@ type action =
 
 let renderPlaybackProgress = (playbackState, { ReasonReact.send }) => {
     switch playbackState {
-        | None => ReasonReact.nullElement
+        | None => ReasonReact.null
         | Some((progress, length)) => <PlaybackProgress progress length onSeek=((pos) => send(Seek(pos))) />
     };
 };
@@ -36,7 +36,7 @@ let make = (~playerUrl, ~trackId=?, _) => {
             |> may(((_, listener)) => IFrameComm.removeListener(listener));
 
         iFrameState := elem
-            |> Js.Nullable.to_opt
+            |> Js.Nullable.toOption
             |> map(Element.fromDom)
             >>= IFrame.cast
             |> map(IFrame.contentWindow)
@@ -88,7 +88,7 @@ let make = (~playerUrl, ~trackId=?, _) => {
             let controlsClassname = Cn.make([
                 "fa",
                 "fa-3x",
-                "disabled" |> Cn.ifBool(trackId === None)
+                "disabled" |> Cn.ifTrue(trackId === None)
             ]);
 
             <div className="player">

@@ -12,32 +12,22 @@ let pool = DbPool.pool;
 
 let doQuery = (query) => Mysql.Queryable.query(pool, query) |> fromPromise;
 
-[@autoserialize] type artist = {
+[@decco] type artist = {
     id: int,
     name: string,
-    napsterId: [@autoserialize.custom (
-        option__to_json(string__to_json)
+    napsterId: option(string),
+    metadataSource: [@decco.codec (
+        Models.metadataSource_encode
             %> Js.Json.stringify
             %> Js.Json.string,
-        Js.Json.decodeString
-            %> Option.get_js
-            %> Js.Json.parseExn
-            %> option__from_json(string__from_json),
-        string__to_devtools
-    )] option(string),
-    metadataSource: [@autoserialize.custom (
-        Models.metadataSource__to_json
-            %> Js.Json.stringify
-            %> Js.Json.string,
-        Js.Json.decodeString
-            %> ResultEx.fromOpt(None)
-            %> ResultEx.map(Js.Json.parseExn)
-            %> ResultEx.bind(Models.metadataSource__from_json),
-        string__to_devtools
+        (j) => Js.Json.decodeString(j)
+            |> ResultEx.fromOpt({ Decco.path: "", message: "Not a string", value: j })
+            |> Belt.Result.map(_, Js.Json.parseExn)
+            |> Belt.Result.flatMap(_, Models.metadataSource_decode)
     )] Models.metadataSource
 };
 
-[@autoserialize] type artistsResult = array(artist);
+[@decco] type artistsResult = array(artist);
 
 let _convertDbArtist = ({ id, name, napsterId, metadataSource }) =>
     { Models.Artist.id, name, napsterId, metadataSource };
@@ -49,12 +39,11 @@ let _selectArtistFields = () => Select.(
 );
 
 let _parseSingleArtistResult = ((result, _)) => {
-    switch (artistsResult__from_json(result)) {
+    switch (artistsResult_decode(result)) {
         | Ok([| artist |]) => Some(_convertDbArtist(artist))
         | Ok([||]) => None
         | Ok(_) => Js.Exn.raiseError("Multiple matches found")
-        | Error(Some(s)) => Js.log(result); Js.Exn.raiseError("Error converting artistsResult: " ++ s)
-        | Error(_) => Js.Exn.raiseError("Error converting artistsResult")
+        | Error(e) => Js.log2(result, e); Js.Exn.raiseError("Error converting artistsResult")
     };
 };
 
@@ -65,7 +54,7 @@ let findByName = (name) => {
 
     _selectArtistFields()
         |> whereParam("name = ?", ?? name)
-        |> whereParam("napsterId = ?", ?? option__to_json((_) => Js.Json.null, None)) /* TODO: this'll have to be generalized */
+        |> where("napsterId IS NULL") /* TODO: this'll have to be generalized */
         |> toString
         |> doQuery
         |> map(_parseSingleArtistResult)
@@ -83,12 +72,8 @@ let findByName = (name) => {
 let findByNapsterId = (napsterId) => {
     open Select;
 
-    let json = Some(napsterId)
-        |> option__to_json(string__to_json)
-        |> Js.Json.stringify;
-
     _selectArtistFields()
-        |> whereParam("napsterId = ?", ?? json)
+        |> whereParam("napsterId = ?", ?? napsterId)
         |> toString
         |> doQuery
         |> map(_parseSingleArtistResult)
@@ -103,8 +88,8 @@ let createFromNapster = (name, napsterId) => {
     Insert.make(DbHelper.knex)
         |> into("artists")
         |> set("name", name)
-        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, Some(napsterId))))
-        |> set("metadataSource", Js.Json.stringify(Models.metadataSource__to_json(Models.Napster)))
+        |> set("napsterId", napsterId)
+        |> set("metadataSource", Js.Json.stringify(Models.metadataSource_encode(Models.Napster)))
         |> set("createdUtc", Std.getCurrentUtc())
         |> toString
         |> Js.String.replaceByRe([%bs.re "/^insert/i"], "insert ignore")
@@ -136,7 +121,7 @@ let setNapsterId = (napsterId, { Models.Artist.id }) => {
     Js.log2("Setting napster ID for artist", id);
 
     Update.make("artists", DbHelper.knex)
-        |> set("napsterId", Js.Json.stringify(option__to_json(string__to_json, napsterId)))
+        |> set("napsterId", napsterId)
         |> whereParam("id = ?", ?? id)
         |> toString
         |> doQuery

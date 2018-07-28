@@ -14,9 +14,9 @@ let goBack = ({ Context.navigate }, _) => {
     navigate(HomePage, ());
 };
 
-let doSearch = ({ ReasonReact.reduce }, query) => {
+let doSearch = ({ ReasonReact.send }, query) => {
     Apis.Search.request(config.apiUrl, query)
-        |> map(go(reduce))
+        |> map(send)
         |> catch((exn) => {
             Js.log2("search error", exn);
             resolve();
@@ -62,17 +62,17 @@ let make = (~dynamicProps as query, ~context, _) => {
 
                     <h2>(s2e("Artists"))</h2>
                     <ul>
-                        (ReasonReact.arrayToElement(Js.Array.map(renderArtist, results.Apis.Search_impl.artists)))
+                        (ReasonReact.array(Js.Array.map(renderArtist, results.Apis.Search_impl.artists)))
                     </ul>
 
                     <h2>(s2e("Albums"))</h2>
                     <ul>
-                        (ReasonReact.arrayToElement(Js.Array.map(renderAlbum, results.albums)))
+                        (ReasonReact.array(Js.Array.map(renderAlbum, results.albums)))
                     </ul>
 
                     <h2>(s2e("Tracks"))</h2>
                     <ul>
-                        (ReasonReact.arrayToElement(Js.Array.map(renderTrack(context), results.tracks)))
+                        (ReasonReact.array(Js.Array.map(renderTrack(context), results.tracks)))
                     </ul>
                 </div>
         };

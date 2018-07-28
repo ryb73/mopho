@@ -7,27 +7,25 @@ open Bluebird;
 module BluebirdEx = PromiseEx.Make(Bluebird);
 
 let mapP = BluebirdEx.map;
-let s2e = ReasonReact.stringToElement;
+let s2e = ReasonReact.string;
 
-[@noserialize]
 type state =
     | Options
     | InAuthFlow
     | ErrorOccurred;
 
-[@noserialize]
 type action =
     | EnterAuthFlow
     | SetError;
 
 let component = ReasonReact.reducerComponent("Login");
 
-let renderLoginOptions = ({ReasonReact.reduce}) =>
+let renderLoginOptions = ({ ReasonReact.send }) =>
     <div>
         <h1> (s2e("welcome to mopho.")) </h1>
         <p> (s2e("sign in with:")) </p>
         <ul>
-            <li> <a href="#" onClick=(reduce((_) => EnterAuthFlow))> (s2e("Napster")) </a> </li>
+            <li> <a href="#" onClick=(_ => send(EnterAuthFlow))> (s2e("Napster")) </a> </li>
         </ul>
     </div>;
 
@@ -41,7 +39,7 @@ let loginWithCode = (onLoggedIn, code) =>
 
 let iFrameMounted = (onLoggedIn, element, _) => {
     element
-        |> Js.Nullable.to_opt
+        |> Js.Nullable.toOption
         |> map(Element.fromDom)
         >>= IFrame.cast
         |> map(IFrame.contentWindow)

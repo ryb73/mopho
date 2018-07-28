@@ -2,7 +2,7 @@ open Std;
 open Bluebird;
 open MomentRe;
 open Option.Infix;
-open! Middleware; /* Ignore warnings because of ppx_autoserialize */
+open Middleware;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
 open BluebirdEx;
@@ -19,21 +19,21 @@ module NapsterApi = BsNapsterApi.Api.Make({ let apiKey = config.napster.apiKey; 
 
 let app = App.make();
 
-let corserOpts = Corser.opts(~origins=[|config.origin|], ~supportsCredentials=Js.true_, ());
+let corserOpts = Corser.opts(~origins=[|config.origin|], ~supportsCredentials=true, ());
 App.use(app) @@ Corser.express(corserOpts);
 App.use(app) @@ BodyParser.json(~strict=false, ());
 
 [@bs.module] external cookieParser : unit => Express.Middleware.t = "cookie-parser";
 App.use(app) @@ cookieParser();
 
-[@autoserialize]
+[@decco]
 type session = {
     state: option(string),
     napsterAccessToken: option(string)
 };
 
 module Session = ExpressSession.Make({
-    [@autoserialize] type t = session;
+    [@decco] type t = session;
     let key = "mopho-api-server";
 });
 

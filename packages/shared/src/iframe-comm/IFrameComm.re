@@ -1,6 +1,6 @@
 open ReDomSuite;
 
-[@autoserialize]
+[@decco]
 type message =
     | LoggedIn(string) /* code */
     | PlaySong(Models.Track.napsterId)
@@ -10,12 +10,12 @@ type message =
     | Seek(float);
 
 let post = (message, targetOrigin, targetWindow) =>
-  Window.postMessage(targetWindow, message__to_json(message), targetOrigin);
+  Window.postMessage(targetWindow, message_encode(message), targetOrigin);
 
 let listen = (fromOrigin, callback, fromWindow) => {
     let listener = (event) => {
         if (event##origin === fromOrigin && event##source === fromWindow) {
-            switch (message__from_json(event##data)) {
+            switch (message_decode(event##data)) {
                 | Ok(message) => callback(message)
                 | Error(errorMsg) => Js.log3("Unhandled IFrame message:", errorMsg, event##data)
             };

@@ -1,17 +1,15 @@
 open Bluebird;
 open ReDomSuite;
 open FrameConfig;
+open Belt.Result;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
-open BluebirdEx;
 
-module QsParser = Qs.MakeParser({
-    [@noserialize]
-    type t = {.
-        code: Js.undefined(string),
-        state: Js.undefined(string)
-    };
-});
+[@decco]
+type queryString = {
+    code: string,
+    state: string
+};
 
 let getAuthUrl = (apiState) => {
     "https://api.napster.com/oauth/authorize?client_id="
@@ -29,7 +27,7 @@ let doAuth = (authState) => {
 
 let beginAuth = () =>
     Apis.GenerateState.request(config.apiUrl, ())
-        |> map(doAuth);
+        |> BluebirdEx.map(doAuth);
 
 let sendCode = (mophoCode) => {
     let window = Window.parent(ReDom.window);
@@ -39,16 +37,17 @@ let sendCode = (mophoCode) => {
 let getMophoCode = (code, state) => {
     let reqData = { Apis.NapsterAuth_impl.code, state };
     Apis.NapsterAuth.request(config.apiUrl, reqData)
-        |> map(({ Apis.NapsterAuth_impl.mophoCode }) => sendCode(mophoCode));
+        |> BluebirdEx.map(({ Apis.NapsterAuth_impl.mophoCode }) => sendCode(mophoCode));
 };
 
 let qs = ReDom.location
     |> Location.search
     |> Js.String.substr(~from=1)
-    |> QsParser.parse;
+    |> Qs.parse
+    |> queryString_decode;
 
-switch (Js.Undefined.to_opt(qs##code), Js.Undefined.to_opt(qs##state)) {
-    | (Some(code), Some(state)) => getMophoCode(code, state)
+switch qs {
+    | Ok({ code, state }) => getMophoCode(code, state)
     | _ => beginAuth()
 }
 |> catch((exn) => {

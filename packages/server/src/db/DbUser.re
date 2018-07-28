@@ -1,5 +1,5 @@
 open Bluebird;
-open Js.Result;
+open Belt.Result;
 open ResultEx;
 open BsKnex;
 open BsKnex.Params.Infix;
@@ -38,8 +38,8 @@ let create = (name: string) => {
         |> map(DbHelper.getInsertId)
 };
 
-[@autoserialize] type userIdResult = { userId: int };
-[@autoserialize] type userIdSelectResult = array(userIdResult);
+[@decco] type userIdResult = { userId: int };
+[@decco] type userIdSelectResult = array(userIdResult);
 
 let getFromNapsterId = (napsterId: string) => {
     open Select;
@@ -51,7 +51,7 @@ let getFromNapsterId = (napsterId: string) => {
         |> toString
         |> doQuery
         |> map(((result, _)) =>
-            switch (userIdSelectResult__from_json(result)) {
+            switch (userIdSelectResult_decode(result)) {
                 | Error(_) => Js.Exn.raiseError("Error converting select result")
 
                 | Ok(results) =>
@@ -136,7 +136,7 @@ let useCode = (salt, code: string) =>
                 |> toString
                 |> doQuery
                 |> map(((result, _)) =>
-                    switch (userIdSelectResult__from_json(result)) {
+                    switch (userIdSelectResult_decode(result)) {
                         | Error(_) => Js.Exn.raiseError("Invalid code")
                         | Ok(result) => (result[0].userId, hash)
                     }
@@ -145,7 +145,7 @@ let useCode = (salt, code: string) =>
         |> tap(((_, hash)) => _deleteHash(hash))
         |> then_(((userId, _)) => _createAuthToken(salt, userId));
 
-[@autoserialize] type userArray = array(Models.User.t);
+[@decco] type userArray = array(Models.User.t);
 
 let getUserFromToken = (salt, token: string) =>
     Std.secureHash(salt, token)
@@ -158,6 +158,6 @@ let getUserFromToken = (salt, token: string) =>
                 |> toString
         ))
         |> then_(doQuery)
-        |> map(((result, _)) => userArray__from_json(result))
+        |> map(((result, _)) => userArray_decode(result))
         |> map(toOpt)
         |> map(flip(Option.bind, Js.Array.pop));

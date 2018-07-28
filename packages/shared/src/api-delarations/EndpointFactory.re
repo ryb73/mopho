@@ -1,6 +1,6 @@
 open Express;
 open Bluebird;
-open Js.Result;
+open Belt.Result;
 open Option.Infix;
 
 module BluebirdEx = PromiseEx.Make(Bluebird);
@@ -13,8 +13,8 @@ type allowedMethods =
     | Post;
 
 module type Definition = {
-    [@autoserialize] type req;
-    [@autoserialize] type resp;
+    [@decco] type req;
+    [@decco] type resp;
     let path: string;
     let reqMethod: allowedMethods;
 };
@@ -25,7 +25,6 @@ module type Endpoint = {
     type resp;
     type req;
 
-    [@noserialize]
     type handlerResult =
         | Result(resp)
         | ErrorCode(int)
@@ -50,14 +49,13 @@ module Endpoint = (Definition: Definition) => {
         |> flip(Js.Dict.get, "json") |? Js.Json.null
         |> Js.Json.decodeString
         |> flip(Option.bind) @@ _tryOpt(Js.Json.parseExn) |? Js.Json.null
-        |> Definition.req__from_json;
+        |> Definition.req_decode;
 
     let _parsePostReq = (req) => req
         |> Request.asJsonObject
         |> flip(Js.Dict.get, "body") |? Js.Json.null
-        |> Definition.req__from_json;
+        |> Definition.req_decode;
 
-    [@noserialize]
     type handlerResult =
         | Result(Definition.resp)
         | ErrorCode(int)
@@ -76,11 +74,11 @@ module Endpoint = (Definition: Definition) => {
 
                 | Ok(data) =>
                     callback(req, resp, next, data)
-                        |> map((result) =>
+                        |> BluebirdEx.map((result) =>
                             switch result {
                                 | ExpressAction(a) => a
                                 | ErrorCode(code) => returnCode(code, resp)
-                                | Result(r) => Definition.resp__to_json(r) |> Response.sendJson(resp)
+                                | Result(r) => Definition.resp_encode(r) |> Response.sendJson(resp)
                             }
                         )
                         |> catch((err) => {
@@ -103,14 +101,14 @@ module Endpoint = (Definition: Definition) => {
         apiUrl
             |> Superagent.get
             |> Superagent.Get.withCredentials
-            |> _queryJson(Definition.req__to_json(data))
+            |> _queryJson(Definition.req_encode(data))
             |> Superagent.Get.end_;
 
     let _doPost = (apiUrl, data) =>
         apiUrl
             |> Superagent.post
             |> Superagent.Post.withCredentials
-            |> Superagent.Post.send(Definition.req__to_json(data))
+            |> Superagent.Post.send(Definition.req_encode(data))
             |> Superagent.Post.end_;
 
     let request = (apiUrlBase, data) => {
@@ -121,7 +119,7 @@ module Endpoint = (Definition: Definition) => {
             };
 
         reqMethod(apiUrlBase ++ Definition.path, data)
-            |> map(RespParser.parse(Definition.resp__from_json))
+            |> BluebirdEx.map(RespParser.parse(Definition.resp_decode))
             |> unwrapResult;
     };
 };

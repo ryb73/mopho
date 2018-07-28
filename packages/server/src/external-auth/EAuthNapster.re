@@ -3,7 +3,7 @@ open BluebirdEx;
 
 let config = ConfigLoader.config;
 
-[@autoserialize]
+[@decco]
 type tokens = {
     access_token: string,
     refresh_token: string,
@@ -14,7 +14,7 @@ let _accessTokenApiCall = (reqData) => {
     Superagent.post("https://api.napster.com/oauth/access_token")
         |> Superagent.Post.send(reqData)
         |> Superagent.Post.end_
-        |> map(RespParser.parse(tokens__from_json))
+        |> map(RespParser.parse(tokens_decode))
         |> unwrapResult;
 };
 

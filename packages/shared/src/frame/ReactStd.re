@@ -29,6 +29,4 @@ module type Page = {
 type component = (module Component);
 type page('d) = (module Page with type dynamicProps = 'd);
 
-let go = (reduce, action) => reduce((_) => action, ());
-
-let s2e = ReasonReact.stringToElement;
+let s2e = ReasonReact.string;
